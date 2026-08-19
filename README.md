@@ -162,8 +162,21 @@ The **Chord Map** menu has two choices:
 
 If the active chord is empty, Harmonizer temporarily falls back to nearest
 quantization against the latest Tetrachords scale. **Harmonizer** is the default
-mode now that the receiver latches short Tetrachords chords; **Nearest** remains
-available and is otherwise unchanged.
+selector mode now that the receiver latches short Tetrachords chords; **Nearest**
+remains available and is otherwise unchanged.
+
+### Chord Nearest mode
+
+Choose **chordnearest** to preserve the incoming melody while constraining each
+new note to the closest pitch class in the active Tetrachords chord. Unlike
+Harmonizer, input notes are not reinterpreted as chord-tone selectors, so an
+ascending line keeps its contour without selector wrapping. Equal-distance ties
+follow the device's existing up/down tie preference.
+
+If no active chord has been captured, Chord Nearest falls back to ordinary
+nearest quantization against the latest eight-note Tetrachords scale. Chord
+Nearest is the default mode for new device instances. Existing Ableton Set
+instances retain their stored mode.
 
 The default register is MIDI 24–48. Quantizer and receiver presentation
 controls are Live parameters: each device instance stores its settings in the
@@ -210,6 +223,8 @@ before adding musical octave offsets.
 ## Behavior
 
 - Nearest mode quantizes to the nearest legal pitch across the MIDI range.
+- Chord Nearest mode preserves melodic contour while targeting the closest
+  active-chord tone.
 - Harmonizer mode maps the OXI selector pattern through the active MIDI chord.
 - Equal-distance ties go upward by default.
 - A Note Off uses the exact output pitch selected for its matching Note On.

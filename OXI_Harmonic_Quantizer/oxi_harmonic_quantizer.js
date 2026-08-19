@@ -30,9 +30,10 @@ var midiClockTicks = 0;
 var preferUpwardTie = 1;
 var enabled = 1;
 // "harmonizer" maps C-B directly to successive tones of the active MIDI
-// chord captured by the Tetrachords receiver. "nearest" keeps the original
-// transparent scale-quantizer mode.
-var quantizerMode = "harmonizer";
+// chord captured by the Tetrachords receiver. "chordnearest" preserves the
+// incoming contour while moving each note to the closest active chord tone.
+// "nearest" keeps the original transparent scale-quantizer mode.
+var quantizerMode = "chordnearest";
 var harmonizerMap = "pitchclass";
 var melodyState = {};
 var movementAmount = 24;
@@ -290,6 +291,7 @@ function mode(value) {
     if (
         value === "nearest" ||
         value === "harmonizer" ||
+        value === "chordnearest" ||
         value === "chromatic" ||
         value === "melody" ||
         value === "voicelead" ||
@@ -323,6 +325,10 @@ function voicelead() {
 
 function nearest() {
     mode("nearest");
+}
+
+function chordnearest() {
+    mode("chordnearest");
 }
 
 function chromatic() {
@@ -618,7 +624,11 @@ function quantize_note(inputNote, channel, velocity) {
 
     if (
         legalPitchClasses.length === 0 &&
-        !(quantizerMode === "harmonizer" && activeChordNotes.length > 0)
+        !(
+            (quantizerMode === "harmonizer" ||
+             quantizerMode === "chordnearest") &&
+            activeChordNotes.length > 0
+        )
     ) {
         return note;
     }
@@ -626,6 +636,10 @@ function quantize_note(inputNote, channel, velocity) {
     if (quantizerMode === "harmonizer") {
         result = activeChordNotes.length > 0
             ? harmonize_to_active_chord(note)
+            : nearest_quantize(note);
+    } else if (quantizerMode === "chordnearest") {
+        result = activeChordNotes.length > 0
+            ? chord_nearest_quantize(note)
             : nearest_quantize(note);
     } else if (quantizerMode === "chromatic") {
         result = chromatic_to_harmony(note);
@@ -643,7 +657,10 @@ function quantize_note(inputNote, channel, velocity) {
         result = nearest_quantize(note);
     }
 
-    if (quantizerMode !== "harmonizer") {
+    if (
+        quantizerMode !== "harmonizer" &&
+        quantizerMode !== "chordnearest"
+    ) {
         result = apply_root_gravity(result, velocity || 0);
     }
     return constrain_to_register(result);
@@ -674,6 +691,44 @@ function nearest_quantize(note) {
             return down;
         }
 
+        if (upLegal) {
+            return up;
+        }
+    }
+
+    return note;
+}
+
+function chord_nearest_quantize(note) {
+    var pitchClasses = active_chord_pitch_classes();
+    var distance;
+    var down;
+    var up;
+    var downLegal;
+    var upLegal;
+
+    if (pitchClasses.length === 0) {
+        return nearest_quantize(note);
+    }
+
+    if (pitchClasses.indexOf(positive_mod(note, 12)) >= 0) {
+        return note;
+    }
+
+    for (distance = 1; distance <= 12; distance++) {
+        down = note - distance;
+        up = note + distance;
+        downLegal = down >= 0 &&
+            pitchClasses.indexOf(positive_mod(down, 12)) >= 0;
+        upLegal = up <= 127 &&
+            pitchClasses.indexOf(positive_mod(up, 12)) >= 0;
+
+        if (downLegal && upLegal) {
+            return preferUpwardTie ? up : down;
+        }
+        if (downLegal) {
+            return down;
+        }
         if (upLegal) {
             return up;
         }
@@ -774,6 +829,9 @@ function mode_description() {
             ? "Harmonizer: C-B selects exact chord voicing"
             : "Harmonizer: C-B selects rooted chord tones";
     }
+    if (quantizerMode === "chordnearest") {
+        return "Chord Nearest: closest active chord tone";
+    }
     if (quantizerMode === "chromatic") {
         return "Chromatic map: C-B selects Tetrachords degrees";
     }
@@ -863,6 +921,24 @@ function active_chord_degrees() {
 
     degrees.sort(function (a, b) { return a - b; });
     return degrees;
+}
+
+function active_chord_pitch_classes() {
+    var seen = {};
+    var pitchClasses = [];
+    var i;
+    var pitchClass;
+
+    for (i = 0; i < activeChordNotes.length; i++) {
+        pitchClass = positive_mod(activeChordNotes[i], 12);
+        if (!seen.hasOwnProperty(pitchClass)) {
+            seen[pitchClass] = true;
+            pitchClasses.push(pitchClass);
+        }
+    }
+
+    pitchClasses.sort(function (a, b) { return a - b; });
+    return pitchClasses;
 }
 
 function degree_index_for_note(note, degrees) {

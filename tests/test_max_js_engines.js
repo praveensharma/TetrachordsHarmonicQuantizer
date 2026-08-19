@@ -217,6 +217,22 @@ assert.deepStrictEqual(
     [60, 63, 67, 70, 72]
 );
 
+// Chord Nearest targets the same active chord without treating C-B as
+// selectors, preserving the direction and approximate shape of the input.
+quantizer.context.mode("chordnearest");
+assert.deepStrictEqual(
+    [60, 61, 62, 64, 65, 69, 71].map((note) =>
+        quantizer.context.quantize_note(note, 1, 100)
+    ),
+    [60, 60, 63, 63, 67, 70, 72]
+);
+
+// With no active chord, Chord Nearest falls back to the current scale.
+quantizer.context.apply_chord([5, 0]);
+assert.strictEqual(quantizer.context.quantize_note(61, 1, 100), 62);
+quantizer.context.apply_chord([6, 0, 48, 51, 55, 58]);
+quantizer.context.mode("harmonizer");
+
 // Exact Voicing mode preserves an inversion supplied by Tetrachords.
 quantizer.context.apply_chord([5, 0, 52, 55, 60]);
 quantizer.context.harmonizermap("voicing");
@@ -377,7 +393,17 @@ function patchBox(patch, id) {
 assert.deepStrictEqual(
     patchBox(quantizerPatch, "obj-mode-menu")
         .saved_attribute_attributes.valueof.parameter_initial,
-    [1]
+    [8]
+);
+assert.strictEqual(
+    patchBox(quantizerPatch, "obj-mode-menu")
+        .saved_attribute_attributes.valueof.parameter_mmax,
+    8
+);
+assert.ok(
+    patchBox(quantizerPatch, "obj-mode-menu")
+        .saved_attribute_attributes.valueof.parameter_enum
+        .includes("chordnearest")
 );
 assert.deepStrictEqual(
     patchBox(quantizerPatch, "obj-high-number")

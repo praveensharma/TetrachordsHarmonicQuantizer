@@ -432,7 +432,7 @@
             700.0,
             20.0
           ],
-          "text": "Harmonizer follows Tetrachords' active MIDI chord. Pitch Class re-roots; Exact Voicing preserves inversion."
+          "text": "Chord Nearest preserves the melody while targeting the active chord. Harmonizer remaps notes as chord-tone selectors."
         }
       },
       {
@@ -564,7 +564,9 @@
             ",",
             "down",
             ",",
-            "sticky"
+            "sticky",
+            ",",
+            "chordnearest"
           ],
           "maxclass": "umenu",
           "numinlets": 1,
@@ -594,7 +596,7 @@
               "parameter_longname": "Quantizer Mode",
               "parameter_shortname": "Mode",
               "parameter_type": 2,
-              "parameter_mmax": 7,
+              "parameter_mmax": 8,
               "parameter_enum": [
                 "nearest",
                 "harmonizer",
@@ -603,11 +605,12 @@
                 "voicelead",
                 "up",
                 "down",
-                "sticky"
+                "sticky",
+                "chordnearest"
               ],
               "parameter_initial_enable": 1,
               "parameter_initial": [
-                1
+                8
               ]
             }
           }

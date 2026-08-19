@@ -41,6 +41,19 @@ var registerLow = 24;
 var registerHigh = 48;
 var rootGravity = 0;
 
+// Clean v2 menu labels map to the original internal identifiers so the DSP
+// logic stays shared with compatibility-safe v1 device instances.
+var MODE_ALIASES = {
+    "chord-nearest": "chordnearest",
+    "scale-nearest": "nearest",
+    "chord-map": "harmonizer",
+    "scale-contour": "melody",
+    "scale-smooth": "voicelead",
+    "scale-up": "up",
+    "scale-down": "down",
+    "scale-map": "chromatic"
+};
+
 // Each source channel/note has a FIFO stack of output pitches.
 var activeNoteMappings = {};
 
@@ -288,6 +301,10 @@ function tiebreakup(v) {
 }
 
 function mode(value) {
+    if (MODE_ALIASES.hasOwnProperty(value)) {
+        value = MODE_ALIASES[value];
+    }
+
     if (
         value === "nearest" ||
         value === "harmonizer" ||

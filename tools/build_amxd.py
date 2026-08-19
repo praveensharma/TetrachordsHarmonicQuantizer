@@ -6,7 +6,7 @@ JSON in its ``ptch`` chunk. This tool replaces that chunk while preserving all
 other template chunks byte-for-byte, then parses the generated file again and
 compares its embedded JSON with the source ``.maxpat``.
 
-By default, both devices are built into ``dist/``. Pass ``--install`` to make
+By default, all devices are built into ``dist/``. Pass ``--install`` to make
 timestamped backups and atomically update the Ableton User Library files.
 """
 
@@ -59,6 +59,15 @@ DEVICES = (
         / "OXI_Harmonic_Quantizer/oxi_harmonic_quantizer.js",
         install_dir=USER_LIBRARY / "OXI Harmonic Quantizer",
         filename="OXI Harmonic Quantizer.amxd",
+    ),
+    Device(
+        name="OXI Harmonic Quantizer v2",
+        maxpat=PROJECT_ROOT
+        / "OXI_Harmonic_Quantizer_V2/OXI Harmonic Quantizer v2.maxpat",
+        javascript=PROJECT_ROOT
+        / "OXI_Harmonic_Quantizer/oxi_harmonic_quantizer.js",
+        install_dir=USER_LIBRARY / "OXI Harmonic Quantizer v2",
+        filename="OXI Harmonic Quantizer v2.amxd",
     ),
     Device(
         name="Tetrachords Harmony Receiver",
@@ -260,7 +269,7 @@ def parse_args() -> argparse.Namespace:
     mode.add_argument(
         "--install",
         action="store_true",
-        help="back up and atomically update both User Library AMXDs",
+        help="back up and atomically update all User Library AMXDs",
     )
     mode.add_argument(
         "--verify-installed",

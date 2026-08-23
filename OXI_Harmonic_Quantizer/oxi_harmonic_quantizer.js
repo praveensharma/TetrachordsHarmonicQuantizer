@@ -33,7 +33,7 @@ var enabled = 1;
 // chord captured by the Tetrachords receiver. "chordnearest" preserves the
 // incoming contour while moving each note to the closest active chord tone.
 // "nearest" keeps the original transparent scale-quantizer mode.
-var quantizerMode = "chordnearest";
+var quantizerMode = "harmonizer";
 var harmonizerMap = "pitchclass";
 var melodyState = {};
 var movementAmount = 24;
@@ -41,8 +41,8 @@ var registerLow = 24;
 var registerHigh = 48;
 var rootGravity = 0;
 
-// Clean v2 menu labels map to the original internal identifiers so the DSP
-// logic stays shared with compatibility-safe v1 device instances.
+// Clear menu labels map to the original internal identifiers so the DSP logic
+// remains stable while the presentation names describe the musical behavior.
 var MODE_ALIASES = {
     "chord-nearest": "chordnearest",
     "scale-nearest": "nearest",

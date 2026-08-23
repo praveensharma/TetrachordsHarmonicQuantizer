@@ -1,18 +1,14 @@
 # Tetrachords → OXI Dynamic Quantizer and Chord Harmonizer
 
-This package contains a Tetrachords receiver and two compatible revisions of
-the OXI Max for Live MIDI effect:
+This package contains two Max for Live MIDI effects:
 
 1. **Tetrachords Harmony Receiver** — listens only to the Tetrachords USB MIDI
    port, parses the 17-byte SysEx message, captures the active chord's MIDI
    notes, updates Ableton Live's scale/root UI, and publishes both states.
-2. **OXI Harmonic Quantizer v2** — the recommended device for new Sets. It
-   listens only to the OXI USB MIDI port, quantizes
+2. **OXI Harmonic Quantizer** — listens only to the OXI USB MIDI port, quantizes
    all incoming MIDI note channels to the current Tetrachords pitch collection
    or maps them through the exact active chord, preserves each input channel,
    and sends the result to the selected Live MIDI output.
-3. **OXI Harmonic Quantizer** — the original menu and parameter ordering,
-   retained so existing Ableton Sets restore without changing modes.
 
 No `All Ins` routing is required.
 
@@ -27,13 +23,9 @@ OXI_Harmonic_Quantizer/
   OXI Harmonic Quantizer.maxpat
   oxi_harmonic_quantizer.js
 
-OXI_Harmonic_Quantizer_V2/
-  OXI Harmonic Quantizer v2.maxpat
-
 dist/
   Tetrachords Harmony Receiver.amxd
   OXI Harmonic Quantizer.amxd
-  OXI Harmonic Quantizer v2.amxd
 
 tests/
   test_quantizer_logic.js
@@ -62,7 +54,9 @@ User Library/
   Max4Live/
     Tetrachords Harmony Receiver/
     OXI Harmonic Quantizer/
-    OXI Harmonic Quantizer v2/
+
+  Presets/MIDI Effects/Max MIDI Effect/Imported/
+    OXI Harmonic Quantizer.amxd
 ```
 
 In Live's browser, open **User Library → Max4Live**, then drag the appropriate
@@ -146,7 +140,7 @@ Create a second dedicated MIDI track:
 MIDI From:  OXI USB MIDI
 Channel:    All Channels
 Monitor:    In
-Device:     OXI Harmonic Quantizer v2
+Device:     OXI Harmonic Quantizer
 MIDI To:    OXI return port, FH-2, or another hardware target
 Channel:    selected in Live
 ```
@@ -157,8 +151,7 @@ the destination channel.
 
 ### Chord Map mode
 
-Choose **chord-map** in the v2 Mode menu (`harmonizer` in v1). Within every
-input octave, C through B
+Choose **chord-map** in the Mode menu. Within every input octave, C through B
 act as successive selectors into the active Tetrachords chord. Selection wraps
 up an octave after every chord tone has been used. Rhythm, velocity, MIDI
 channel and Note On/Off identity are preserved.
@@ -172,11 +165,11 @@ The **Chord Map** menu has two choices:
 
 If the active chord is empty, Chord Map temporarily falls back to nearest
 quantization against the latest Tetrachords scale. Chord Map remains available
-for deliberate pattern transformation; Chord Nearest is the v2 default.
+for deliberate pattern transformation and is the default mode.
 
 ### Chord Nearest mode
 
-Choose **chord-nearest** in v2 (`chordnearest` in v1) to preserve the incoming
+Choose **chord-nearest** to preserve the incoming
 melody while constraining each new note to the closest pitch class in the active
 Tetrachords chord. Unlike Chord Map, input notes are not reinterpreted as
 chord-tone selectors, so an ascending line keeps its contour without selector
@@ -185,8 +178,9 @@ preference.
 
 If no active chord has been captured, Chord Nearest falls back to ordinary
 nearest quantization against the latest eight-note Tetrachords scale. Chord
-Nearest is the default mode for new device instances. Existing Ableton Set
-instances retain their stored mode. The v2 menu is ordered and labeled as:
+Map is the default mode. This release intentionally replaces the former menu
+ordering under the same device identity, so review the Mode once when opening
+an older Ableton Set. The menu is ordered and labeled as:
 
 1. `chord-nearest`
 2. `scale-nearest`
@@ -197,8 +191,8 @@ instances retain their stored mode. The v2 menu is ordered and labeled as:
 7. `scale-down`
 8. `scale-map`
 
-The v1-only `sticky` entry was behaviorally identical to `voicelead`; it is not
-present in v2.
+The former `sticky` entry was behaviorally identical to `voicelead` and has
+been removed.
 
 The default register is MIDI 24–48. Quantizer and receiver presentation
 controls are Live parameters: each device instance stores its settings in the

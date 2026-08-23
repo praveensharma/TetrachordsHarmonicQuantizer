@@ -21,8 +21,8 @@
       15.0
     ],
     "devicewidth": 750.0,
-    "description": "OXI MIDI quantizer and exact Tetrachords active-chord harmonizer.",
-    "digest": "Tetrachords chord-tone, melodic and nearest-note MIDI processor.",
+    "description": "OXI MIDI quantizer with clear scale, chord and mapping modes.",
+    "digest": "Tetrachords chord-nearest, scale and intentional mapping processor.",
     "tags": "MIDI OXI FH-2 Tetrachords quantizer",
     "boxes": [
       {
@@ -432,7 +432,7 @@
             700.0,
             20.0
           ],
-          "text": "Chord Nearest preserves the melody while targeting the active chord. Harmonizer remaps notes as chord-tone selectors."
+          "text": "Chord Nearest preserves melody. Chord/Scale Map deliberately transform the incoming pattern."
         }
       },
       {
@@ -529,44 +529,23 @@
       },
       {
         "box": {
-          "id": "obj-mode-sticky",
-          "maxclass": "message",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "presentation": 0,
-          "presentation_rect": [
-            345.0,
-            100.0,
-            55.0,
-            22.0
-          ],
-          "text": "sticky"
-        }
-      },
-      {
-        "box": {
           "id": "obj-mode-menu",
           "items": [
-            "nearest",
+            "chord-nearest",
             ",",
-            "harmonizer",
+            "scale-nearest",
             ",",
-            "chromatic",
+            "chord-map",
             ",",
-            "melody",
+            "scale-contour",
             ",",
-            "voicelead",
+            "scale-smooth",
             ",",
-            "up",
+            "scale-up",
             ",",
-            "down",
+            "scale-down",
             ",",
-            "sticky",
-            ",",
-            "chordnearest"
+            "scale-map"
           ],
           "maxclass": "umenu",
           "numinlets": 1,
@@ -596,21 +575,20 @@
               "parameter_longname": "Quantizer Mode",
               "parameter_shortname": "Mode",
               "parameter_type": 2,
-              "parameter_mmax": 8,
+              "parameter_mmax": 7,
               "parameter_enum": [
-                "nearest",
-                "harmonizer",
-                "chromatic",
-                "melody",
-                "voicelead",
-                "up",
-                "down",
-                "sticky",
-                "chordnearest"
+                "chord-nearest",
+                "scale-nearest",
+                "chord-map",
+                "scale-contour",
+                "scale-smooth",
+                "scale-up",
+                "scale-down",
+                "scale-map"
               ],
               "parameter_initial_enable": 1,
               "parameter_initial": [
-                8
+                2
               ]
             }
           }
@@ -1341,18 +1319,6 @@
           ],
           "source": [
             "obj-mode-down",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-js",
-            0
-          ],
-          "source": [
-            "obj-mode-sticky",
             0
           ]
         }

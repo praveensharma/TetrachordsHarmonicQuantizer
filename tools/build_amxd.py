@@ -26,7 +26,11 @@ from typing import Iterable
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-USER_LIBRARY = Path.home() / "Music/Ableton/User Library/Max4Live"
+USER_LIBRARY_ROOT = Path.home() / "Music/Ableton/User Library"
+MAX4LIVE_LIBRARY = USER_LIBRARY_ROOT / "Max4Live"
+MIDI_EFFECT_LIBRARY = (
+    USER_LIBRARY_ROOT / "Presets/MIDI Effects/Max MIDI Effect/Imported"
+)
 
 
 @dataclass(frozen=True)
@@ -36,6 +40,11 @@ class Device:
     javascript: Path
     install_dir: Path
     filename: str
+    install_alias_dirs: tuple[Path, ...] = ()
+
+    @property
+    def install_dirs(self) -> tuple[Path, ...]:
+        return (self.install_dir, *self.install_alias_dirs)
 
     @property
     def installed_amxd(self) -> Path:
@@ -57,17 +66,9 @@ DEVICES = (
         / "OXI_Harmonic_Quantizer/OXI Harmonic Quantizer.maxpat",
         javascript=PROJECT_ROOT
         / "OXI_Harmonic_Quantizer/oxi_harmonic_quantizer.js",
-        install_dir=USER_LIBRARY / "OXI Harmonic Quantizer",
+        install_dir=MAX4LIVE_LIBRARY / "OXI Harmonic Quantizer",
         filename="OXI Harmonic Quantizer.amxd",
-    ),
-    Device(
-        name="OXI Harmonic Quantizer v2",
-        maxpat=PROJECT_ROOT
-        / "OXI_Harmonic_Quantizer_V2/OXI Harmonic Quantizer v2.maxpat",
-        javascript=PROJECT_ROOT
-        / "OXI_Harmonic_Quantizer/oxi_harmonic_quantizer.js",
-        install_dir=USER_LIBRARY / "OXI Harmonic Quantizer v2",
-        filename="OXI Harmonic Quantizer v2.amxd",
+        install_alias_dirs=(MIDI_EFFECT_LIBRARY,),
     ),
     Device(
         name="Tetrachords Harmony Receiver",
@@ -75,7 +76,7 @@ DEVICES = (
         / "Tetrachords_Harmony_Receiver/Tetrachords Harmony Receiver.maxpat",
         javascript=PROJECT_ROOT
         / "Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js",
-        install_dir=USER_LIBRARY / "Tetrachords Harmony Receiver",
+        install_dir=MAX4LIVE_LIBRARY / "Tetrachords Harmony Receiver",
         filename="Tetrachords Harmony Receiver.amxd",
     ),
 )
@@ -236,26 +237,34 @@ def verify_installed(devices: Iterable[Device]) -> list[dict[str, object]]:
     results = []
     for device in devices:
         _, source_json = read_maxpat(device.maxpat)
-        installed = device.installed_amxd
-        container = parse_container(installed.read_bytes(), installed)
-        if embedded_patch(container, installed) != source_json:
-            raise ValueError(
-                f"{device.name}: installed AMXD does not match source maxpat"
-            )
-        if (
-            not device.installed_javascript.exists()
-            or device.installed_javascript.read_bytes()
-            != device.javascript.read_bytes()
-        ):
-            raise ValueError(
-                f"{device.name}: installed JavaScript does not match source"
+        locations = []
+        for install_dir in device.install_dirs:
+            installed = install_dir / device.filename
+            installed_javascript = install_dir / device.javascript.name
+            container = parse_container(installed.read_bytes(), installed)
+            if embedded_patch(container, installed) != source_json:
+                raise ValueError(
+                    f"{device.name}: installed AMXD does not match source maxpat"
+                )
+            if (
+                not installed_javascript.exists()
+                or installed_javascript.read_bytes()
+                != device.javascript.read_bytes()
+            ):
+                raise ValueError(
+                    f"{device.name}: installed JavaScript does not match source"
+                )
+            locations.append(
+                {
+                    "installed": str(installed),
+                    "bytes": installed.stat().st_size,
+                    "javascript": str(installed_javascript),
+                }
             )
         results.append(
             {
                 "name": device.name,
-                "installed": str(installed),
-                "bytes": installed.stat().st_size,
-                "javascript": str(device.installed_javascript),
+                "locations": locations,
                 "javascript_verified": True,
                 "verified": True,
             }
@@ -295,14 +304,17 @@ def main() -> int:
             backups: dict[str, list[str]] = {}
             for device in DEVICES:
                 backups[device.name] = []
-                if device.installed_amxd.exists():
-                    backups[device.name].append(
-                        str(backup(device.installed_amxd, stamp))
-                    )
-                if device.installed_javascript.exists():
-                    backups[device.name].append(
-                        str(backup(device.installed_javascript, stamp))
-                    )
+                for install_dir in device.install_dirs:
+                    installed_amxd = install_dir / device.filename
+                    installed_javascript = install_dir / device.javascript.name
+                    if installed_amxd.exists():
+                        backups[device.name].append(
+                            str(backup(installed_amxd, stamp))
+                        )
+                    if installed_javascript.exists():
+                        backups[device.name].append(
+                            str(backup(installed_javascript, stamp))
+                        )
 
             results = []
             for device in DEVICES:
@@ -311,11 +323,21 @@ def main() -> int:
                     device.installed_javascript,
                     device.javascript.read_bytes(),
                 )
+                for install_dir in device.install_alias_dirs:
+                    atomic_write(
+                        install_dir / device.filename,
+                        device.installed_amxd.read_bytes(),
+                    )
+                    atomic_write(
+                        install_dir / device.javascript.name,
+                        device.javascript.read_bytes(),
+                    )
                 result["javascript"] = str(device.installed_javascript)
                 result["javascript_verified"] = (
                     device.installed_javascript.read_bytes()
                     == device.javascript.read_bytes()
                 )
+                result["locations"] = verify_installed((device,))[0]["locations"]
                 results.append(result)
             for result in results:
                 result["backup"] = backups[result["name"]]

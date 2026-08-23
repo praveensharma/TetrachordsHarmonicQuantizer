@@ -203,9 +203,9 @@ loadScript(
 quantizer.context.init();
 quantizer.context.inlet = 0;
 assert.strictEqual(quantizer.context.registerHigh, 48);
-assert.strictEqual(quantizer.context.quantizerMode, "chordnearest");
+assert.strictEqual(quantizer.context.quantizerMode, "harmonizer");
 
-// Clean v2 labels normalize to the compatibility-safe internal mode names.
+// Presentation labels normalize to the established internal mode names.
 [
     ["chord-nearest", "chordnearest"],
     ["scale-nearest", "nearest"],
@@ -219,7 +219,7 @@ assert.strictEqual(quantizer.context.quantizerMode, "chordnearest");
     quantizer.context.mode(label);
     assert.strictEqual(quantizer.context.quantizerMode, internal);
 });
-quantizer.context.mode("chord-nearest");
+quantizer.context.mode("chord-map");
 // Isolate mapping tests from the narrower production register default.
 quantizer.context.high(96);
 
@@ -381,15 +381,6 @@ const quantizerPatch = JSON.parse(fs.readFileSync(
     "utf8"
 ));
 
-const quantizerV2Patch = JSON.parse(fs.readFileSync(
-    path.join(
-        __dirname,
-        "..",
-        "OXI_Harmonic_Quantizer_V2",
-        "OXI Harmonic Quantizer v2.maxpat"
-    ),
-    "utf8"
-));
 const receiverPatch = JSON.parse(fs.readFileSync(
     path.join(
         __dirname,
@@ -419,21 +410,6 @@ function patchBox(patch, id) {
 });
 assert.deepStrictEqual(
     patchBox(quantizerPatch, "obj-mode-menu")
-        .saved_attribute_attributes.valueof.parameter_initial,
-    [8]
-);
-assert.strictEqual(
-    patchBox(quantizerPatch, "obj-mode-menu")
-        .saved_attribute_attributes.valueof.parameter_mmax,
-    8
-);
-assert.ok(
-    patchBox(quantizerPatch, "obj-mode-menu")
-        .saved_attribute_attributes.valueof.parameter_enum
-        .includes("chordnearest")
-);
-assert.deepStrictEqual(
-    patchBox(quantizerV2Patch, "obj-mode-menu")
         .saved_attribute_attributes.valueof.parameter_enum,
     [
         "chord-nearest",
@@ -447,17 +423,17 @@ assert.deepStrictEqual(
     ]
 );
 assert.deepStrictEqual(
-    patchBox(quantizerV2Patch, "obj-mode-menu")
+    patchBox(quantizerPatch, "obj-mode-menu")
         .saved_attribute_attributes.valueof.parameter_initial,
-    [0]
+    [2]
 );
 assert.strictEqual(
-    patchBox(quantizerV2Patch, "obj-mode-menu")
+    patchBox(quantizerPatch, "obj-mode-menu")
         .saved_attribute_attributes.valueof.parameter_mmax,
     7
 );
 assert.ok(
-    !patchBox(quantizerV2Patch, "obj-mode-menu")
+    !patchBox(quantizerPatch, "obj-mode-menu")
         .saved_attribute_attributes.valueof.parameter_enum
         .includes("sticky")
 );

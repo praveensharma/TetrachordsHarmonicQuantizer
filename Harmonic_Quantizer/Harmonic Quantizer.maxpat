@@ -21,9 +21,9 @@
       15.0
     ],
     "devicewidth": 750.0,
-    "description": "OXI MIDI quantizer with clear scale, chord and mapping modes.",
+    "description": "MIDI harmonic quantizer with clear scale, chord and mapping modes.",
     "digest": "Tetrachords chord-nearest, scale and intentional mapping processor.",
-    "tags": "MIDI OXI FH-2 Tetrachords quantizer",
+    "tags": "MIDI Tetrachords harmonic quantizer",
     "boxes": [
       {
         "box": {
@@ -46,7 +46,7 @@
             290.0,
             24.0
           ],
-          "text": "OXI Harmonic Quantizer"
+          "text": "Harmonic Quantizer"
         }
       },
       {
@@ -68,7 +68,7 @@
             540.0,
             20.0
           ],
-          "text": "Dedicated OXI USB track • Monitor In • MIDI To: your hardware target"
+          "text": "Source MIDI track • Monitor In • MIDI To: your hardware target"
         }
       },
       {
@@ -124,10 +124,10 @@
             22.0
           ],
           "saved_object_attributes": {
-            "filename": "oxi_harmonic_quantizer.js",
+            "filename": "harmonic_quantizer.js",
             "parameter_enable": 0
           },
-          "text": "js oxi_harmonic_quantizer.js"
+          "text": "js harmonic_quantizer.js"
         }
       },
       {
@@ -1490,12 +1490,96 @@
             0
           ]
         }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-mode-menu",
+            0
+          ],
+          "source": [
+            "obj-thisdevice",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-harmonizer-menu",
+            0
+          ],
+          "source": [
+            "obj-thisdevice",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-timing-menu",
+            0
+          ],
+          "source": [
+            "obj-thisdevice",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-gravity-menu",
+            0
+          ],
+          "source": [
+            "obj-thisdevice",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-movement-number",
+            0
+          ],
+          "source": [
+            "obj-thisdevice",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-low-number",
+            0
+          ],
+          "source": [
+            "obj-thisdevice",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-high-number",
+            0
+          ],
+          "source": [
+            "obj-thisdevice",
+            0
+          ]
+        }
       }
     ],
     "dependency_cache": [
       {
-        "name": "oxi_harmonic_quantizer.js",
-        "bootpath": "~/Documents/Codex/2026-07-26/referenced-chatgpt-conversation-this-is-untrusted/work/tetrachords-oxi-fh2/OXI_Harmonic_Quantizer",
+        "name": "harmonic_quantizer.js",
+        "bootpath": ".",
         "patcherrelativepath": ".",
         "type": "TEXT",
         "implicit": 1

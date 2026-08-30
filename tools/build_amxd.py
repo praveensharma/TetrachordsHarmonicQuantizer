@@ -61,13 +61,13 @@ class Device:
 
 DEVICES = (
     Device(
-        name="OXI Harmonic Quantizer",
+        name="Harmonic Quantizer",
         maxpat=PROJECT_ROOT
-        / "OXI_Harmonic_Quantizer/OXI Harmonic Quantizer.maxpat",
+        / "Harmonic_Quantizer/Harmonic Quantizer.maxpat",
         javascript=PROJECT_ROOT
-        / "OXI_Harmonic_Quantizer/oxi_harmonic_quantizer.js",
-        install_dir=MAX4LIVE_LIBRARY / "OXI Harmonic Quantizer",
-        filename="OXI Harmonic Quantizer.amxd",
+        / "Harmonic_Quantizer/harmonic_quantizer.js",
+        install_dir=MAX4LIVE_LIBRARY / "Harmonic Quantizer",
+        filename="Harmonic Quantizer.amxd",
         install_alias_dirs=(MIDI_EFFECT_LIBRARY,),
     ),
     Device(

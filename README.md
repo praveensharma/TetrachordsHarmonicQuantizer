@@ -1,14 +1,13 @@
-# Tetrachords → OXI Dynamic Quantizer and Chord Harmonizer
+# Tetrachords Harmonic Quantizer and Chord Tools
 
 This package contains two Max for Live MIDI effects:
 
-1. **Tetrachords Harmony Receiver** — listens only to the Tetrachords USB MIDI
-   port, parses the 17-byte SysEx message, captures the active chord's MIDI
-   notes, updates Ableton Live's scale/root UI, and publishes both states.
-2. **OXI Harmonic Quantizer** — listens only to the OXI USB MIDI port, quantizes
-   all incoming MIDI note channels to the current Tetrachords pitch collection
-   or maps them through the exact active chord, preserves each input channel,
-   and sends the result to the selected Live MIDI output.
+1. **Tetrachords Harmony Receiver** — parses the 17-byte SysEx message,
+   captures the active chord's MIDI notes, optionally captures an authoritative
+   MIDI note field of any size, and publishes one selected valid-note source.
+2. **Harmonic Quantizer** — processes any MIDI source against the selected
+   Tetrachords pitch collection or exact active chord, preserves each input
+   channel, and sends the result to the selected Live MIDI output.
 
 No `All Ins` routing is required.
 
@@ -19,13 +18,13 @@ Tetrachords_Harmony_Receiver/
   Tetrachords Harmony Receiver.maxpat
   tetrachords_harmony_receiver.js
 
-OXI_Harmonic_Quantizer/
-  OXI Harmonic Quantizer.maxpat
-  oxi_harmonic_quantizer.js
+Harmonic_Quantizer/
+  Harmonic Quantizer.maxpat
+  harmonic_quantizer.js
 
 dist/
   Tetrachords Harmony Receiver.amxd
-  OXI Harmonic Quantizer.amxd
+  Harmonic Quantizer.amxd
 
 tests/
   test_quantizer_logic.js
@@ -53,10 +52,10 @@ JavaScript source in its own Ableton User Library folder, for example:
 User Library/
   Max4Live/
     Tetrachords Harmony Receiver/
-    OXI Harmonic Quantizer/
+    Harmonic Quantizer/
 
   Presets/MIDI Effects/Max MIDI Effect/Imported/
-    OXI Harmonic Quantizer.amxd
+    Harmonic Quantizer.amxd
 ```
 
 In Live's browser, open **User Library → Max4Live**, then drag the appropriate
@@ -75,12 +74,12 @@ to edit it.
 In **Live Settings → Link, Tempo & MIDI**:
 
 - Enable **Track Input** for the Tetrachords USB MIDI port.
-- Enable **Track Input** for the OXI USB MIDI port.
+- Enable **Track Input** for the sequencer or controller MIDI port.
 - Enable **Track Output** for the FH-2 MIDI port.
 - `Remote` is not required for this setup.
 
-Avoid any second direct OXI → FH-2 route. The quantizer track should be the only
-path carrying these four OXI channels to the FH-2.
+Avoid a second direct source-to-hardware route. The quantizer track should be
+the only path carrying source notes to the target synth or MIDI/CV converter.
 
 ## Track 1 — Tetrachords receiver
 
@@ -110,6 +109,19 @@ The eight interval bytes are authoritative. The `mode` byte is used only as a
 fallback label when updating Live's scale UI. The octave duplicate in the eight
 intervals is removed when building the pitch-class set.
 
+For an A/B comparison, Tetrachords may also send a collection of simultaneous
+Note Ons on a dedicated channel. Set **Field Ch** to that channel, then switch
+**Valid Notes** between **SysEx Intervals** and **MIDI Note Field** while
+playback continues. After a 25 ms quiet window, the receiver atomically commits
+whatever non-empty Note On burst was sent as a complete replacement field;
+ordinary releases do not clear or merge it. Its monitor rows
+show the raw SysEx-derived notes, raw MIDI notes, and active source, plus an
+`EXACT RAW MATCH`, `SAME PITCH CLASSES`, or `DIFFERENT` comparison.
+
+The track must receive **All Channels** so it can see the chord channel and the
+dedicated note-field channel together. The note-field channel is excluded from
+chord capture even when **Chord Ch** is set to **all**.
+
 Ordinary chord Note Ons arriving on the same track are captured as the active
 chord. Set **Chord Ch** to the Tetrachords MIDI output channel carrying that
 chord, or leave it at **all** only when no other Tetrachords note streams reach
@@ -132,20 +144,20 @@ live.thisdevice → deferlow → init → js
 
 It intentionally does not initialize `LiveAPI` from `loadbang`.
 
-## Track 2 — OXI quantizer / harmonizer
+## Track 2 — source quantizer / harmonizer
 
 Create a second dedicated MIDI track:
 
 ```text
-MIDI From:  OXI USB MIDI
+MIDI From:  sequencer or controller MIDI
 Channel:    All Channels
 Monitor:    In
-Device:     OXI Harmonic Quantizer
-MIDI To:    OXI return port, FH-2, or another hardware target
+Device:     Harmonic Quantizer
+MIDI To:    synth, MIDI/CV converter, or another hardware target
 Channel:    selected in Live
 ```
 
-Use any OXI MIDI channels you need. The device processes every incoming note
+Use any source MIDI channels you need. The device processes every incoming note
 and preserves its source channel; Live's MIDI To channel selection determines
 the destination channel.
 
@@ -177,7 +189,7 @@ wrapping. Equal-distance ties follow the device's existing up/down tie
 preference.
 
 If no active chord has been captured, Chord Nearest falls back to ordinary
-nearest quantization against the latest eight-note Tetrachords scale. Chord
+nearest quantization against the selected Tetrachords note collection. Chord
 Map is the default mode. This release intentionally replaces the former menu
 ordering under the same device identity, so review the Mode once when opening
 an older Ableton Set. The menu is ordered and labeled as:
@@ -201,7 +213,7 @@ state.
 
 One four-voice example is:
 
-| OXI sequence | MIDI channel | Matriarch destination |
+| Source sequence | MIDI channel | Matriarch destination |
 |---|---:|---|
 | Oscillator 1 line | 2 | OSC 1 PITCH |
 | Oscillator 2 line | 3 | OSC 2 PITCH |
@@ -210,7 +222,7 @@ One four-voice example is:
 
 All non-note channel messages pass through unchanged. MIDI clock and other
 real-time bytes also pass through. SysEx is passed through unchanged on the
-OXI track.
+source track.
 
 ## FH-2 setup
 
@@ -241,7 +253,7 @@ before adding musical octave offsets.
 - Scale Nearest mode quantizes to the nearest legal pitch across the MIDI range.
 - Chord Nearest mode preserves melodic contour while targeting the closest
   active-chord tone.
-- Chord Map mode maps the OXI selector pattern through the active MIDI chord.
+- Chord Map mode maps the source selector pattern through the active MIDI chord.
 - Equal-distance ties go upward by default.
 - A Note Off uses the exact output pitch selected for its matching Note On.
 - Overlapping source notes that collapse to one output pitch are reference
@@ -259,9 +271,9 @@ before adding musical octave offsets.
 3. Change a Tetrachords chord and confirm the receiver shows `Active chord`.
 4. Confirm the quantizer status shows the same chord notes.
 5. Select **chord-map** and **pitchclass**.
-6. Run an ascending chromatic OXI sequence on one channel.
+6. Run an ascending chromatic source sequence on one channel.
 7. Confirm it arpeggiates the active chord and changes with Tetrachords.
-8. Try **voicing**, then add other OXI channels after the one-channel test.
+8. Try **voicing**, then add other source channels after the one-channel test.
 
 Use the device's **Panic** button if a downstream synth or converter retains a
 stuck note.

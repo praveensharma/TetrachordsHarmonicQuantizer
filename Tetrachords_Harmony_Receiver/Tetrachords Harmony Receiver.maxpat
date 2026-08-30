@@ -13,7 +13,7 @@
       100.0,
       100.0,
       720.0,
-      310.0
+      410.0
     ],
     "bglocked": 0,
     "openinpresentation": 1,
@@ -31,8 +31,8 @@
     "enablehscroll": 1,
     "enablevscroll": 1,
     "devicewidth": 690.0,
-    "description": "Receives Tetrachords SysEx and captures the exact active MIDI chord.",
-    "digest": "Tetrachords scale and active-chord receiver for the companion OXI quantizer.",
+    "description": "Receives Tetrachords SysEx, active chord notes and an optional authoritative MIDI note field.",
+    "digest": "Tetrachords harmonic-state receiver for the companion Harmonic Quantizer.",
     "tags": "MIDI Tetrachords harmony quantizer",
     "boxes": [
       {
@@ -61,7 +61,7 @@
         "box": {
           "id": "obj-subtitle",
           "maxclass": "comment",
-          "text": "Tetrachords USB track • captures SysEx plus active chord notes • MIDI To: No Output",
+          "text": "Tetrachords MIDI track • SysEx, chord notes and optional MIDI note field • MIDI To: No Output",
           "patching_rect": [
             20.0,
             42.0,
@@ -96,8 +96,11 @@
           "maxclass": "newobj",
           "text": "js tetrachords_harmony_receiver.js",
           "numinlets": 1,
-          "numoutlets": 2,
+          "numoutlets": 5,
           "outlettype": [
+            "",
+            "",
+            "",
             "",
             ""
           ],
@@ -389,8 +392,8 @@
           "presentation": 1,
           "presentation_rect": [
             15.0,
-            132.0,
-            570.0,
+            242.0,
+            650.0,
             20.0
           ]
         }
@@ -502,6 +505,130 @@
       },
       {
         "box": {
+          "id": "obj-valid-source-label",
+          "maxclass": "comment",
+          "text": "Valid Notes",
+          "patching_rect": [20.0, 340.0, 75.0, 20.0],
+          "presentation": 1,
+          "presentation_rect": [15.0, 134.0, 75.0, 20.0]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-source-menu",
+          "maxclass": "umenu",
+          "items": ["SysEx Intervals", ",", "MIDI Note Field"],
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": ["int", "", ""],
+          "patching_rect": [95.0, 340.0, 125.0, 22.0],
+          "presentation": 1,
+          "presentation_rect": [90.0, 132.0, 125.0, 22.0],
+          "parameter_enable": 1,
+          "varname": "valid_note_source",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Valid Note Source",
+              "parameter_shortname": "Valid Source",
+              "parameter_type": 2,
+              "parameter_mmax": 1,
+              "parameter_enum": ["SysEx Intervals", "MIDI Note Field"],
+              "parameter_initial_enable": 1,
+              "parameter_initial": [0]
+            }
+          }
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-source-prepend",
+          "maxclass": "newobj",
+          "text": "prepend validsource",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [""],
+          "patching_rect": [235.0, 340.0, 130.0, 22.0]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-channel-label",
+          "maxclass": "comment",
+          "text": "Field Ch",
+          "patching_rect": [385.0, 340.0, 65.0, 20.0],
+          "presentation": 1,
+          "presentation_rect": [235.0, 134.0, 65.0, 20.0]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-channel-menu",
+          "maxclass": "umenu",
+          "items": ["off", ",", "1", ",", "2", ",", "3", ",", "4", ",", "5", ",", "6", ",", "7", ",", "8", ",", "9", ",", "10", ",", "11", ",", "12", ",", "13", ",", "14", ",", "15", ",", "16"],
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": ["int", "", ""],
+          "patching_rect": [450.0, 340.0, 70.0, 22.0],
+          "presentation": 1,
+          "presentation_rect": [300.0, 132.0, 70.0, 22.0],
+          "parameter_enable": 1,
+          "varname": "valid_note_channel",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "MIDI Note Field Channel",
+              "parameter_shortname": "Field Ch",
+              "parameter_type": 2,
+              "parameter_mmax": 16,
+              "parameter_enum": ["off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"],
+              "parameter_initial_enable": 1,
+              "parameter_initial": [0]
+            }
+          }
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-channel-prepend",
+          "maxclass": "newobj",
+          "text": "prepend validnotechannel",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [""],
+          "patching_rect": [535.0, 340.0, 160.0, 22.0]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-derived-monitor",
+          "maxclass": "message",
+          "text": "SysEx Intervals: waiting",
+          "patching_rect": [20.0, 375.0, 650.0, 22.0],
+          "presentation": 1,
+          "presentation_rect": [15.0, 164.0, 650.0, 22.0]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-midi-valid-monitor",
+          "maxclass": "message",
+          "text": "MIDI Note Field: Off",
+          "patching_rect": [20.0, 402.0, 650.0, 22.0],
+          "presentation": 1,
+          "presentation_rect": [15.0, 188.0, 650.0, 22.0]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-active-valid-monitor",
+          "maxclass": "message",
+          "text": "Active: SysEx Intervals • no complete set",
+          "patching_rect": [20.0, 429.0, 650.0, 22.0],
+          "presentation": 1,
+          "presentation_rect": [15.0, 212.0, 650.0, 22.0]
+        }
+      },
+      {
+        "box": {
           "id": "obj-thisdevice",
           "maxclass": "newobj",
           "text": "live.thisdevice",
@@ -515,6 +642,48 @@
       }
     ],
     "lines": [
+      {
+        "patchline": {
+          "source": ["obj-valid-source-menu", 1],
+          "destination": ["obj-valid-source-prepend", 0]
+        }
+      },
+      {
+        "patchline": {
+          "source": ["obj-valid-source-prepend", 0],
+          "destination": ["obj-js", 0]
+        }
+      },
+      {
+        "patchline": {
+          "source": ["obj-valid-channel-menu", 1],
+          "destination": ["obj-valid-channel-prepend", 0]
+        }
+      },
+      {
+        "patchline": {
+          "source": ["obj-valid-channel-prepend", 0],
+          "destination": ["obj-js", 0]
+        }
+      },
+      {
+        "patchline": {
+          "source": ["obj-js", 2],
+          "destination": ["obj-derived-monitor", 0]
+        }
+      },
+      {
+        "patchline": {
+          "source": ["obj-js", 3],
+          "destination": ["obj-midi-valid-monitor", 0]
+        }
+      },
+      {
+        "patchline": {
+          "source": ["obj-js", 4],
+          "destination": ["obj-active-valid-monitor", 0]
+        }
+      },
       {
         "patchline": {
           "source": [

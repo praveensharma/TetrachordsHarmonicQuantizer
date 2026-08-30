@@ -1,4 +1,4 @@
-// oxi_harmonic_quantizer.js
+// harmonic_quantizer.js
 //
 // Inlet 0: raw MIDI bytes from [midiin]
 // Inlet 1: harmony messages from [receive tetrachords_harmony_bus_v1]
@@ -20,6 +20,9 @@ var NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B
 var legalPitchClasses = [];
 var harmonyVersion = -1;
 var lastSeenHarmonyVersion = -1;
+var lastSeenActiveValidVersion = -1;
+var hasActiveValidProtocol = 0;
+var activeValidSource = "sysex";
 var harmonyRoot = 0;
 var activeChordNotes = [];
 var activeChordVersion = -1;
@@ -54,6 +57,14 @@ var MODE_ALIASES = {
     "scale-map": "chromatic"
 };
 
+var MODE_MENU_VALUES = [
+    "chordnearest", "nearest", "harmonizer", "melody",
+    "voicelead", "up", "down", "chromatic"
+];
+var CHORD_MAP_MENU_VALUES = ["pitchclass", "voicing"];
+var TIMING_MENU_VALUES = ["immediate", "nextnote", "nextbar"];
+var GRAVITY_MENU_VALUES = [0, 1, 2];
+
 // Each source channel/note has a FIFO stack of output pitches.
 var activeNoteMappings = {};
 
@@ -66,12 +77,17 @@ var channelExpected = 0;
 var systemDataRemaining = 0;
 var inSysEx = false;
 var harmonyPollTask = null;
+var TRACE_PATH = "/private/tmp/harmonic_quantizer_trace.tsv";
+var traceLineCount = 0;
+var traceInstance = Math.floor(Math.random() * 0x7fffffff).toString(36);
 
 function loadbang() {
     init();
 }
 
 function init() {
+    reset_runtime_trace("time\tinstance\tevent\tdetails");
+    restore_controls_from_patcher();
     sync_from_global(1);
 
     // Named Max messages can be missed when either device is reloaded.  The
@@ -90,11 +106,114 @@ function init() {
     }
 }
 
+// Max preserves parameter values in the Live Set, but recompiling an
+// autowatched [js] object recreates this JavaScript context with the defaults
+// above. The visible controls do not necessarily emit their values again, so
+// explicitly adopt the values that Ableton is showing. Without this step the
+// menu can say Scale Nearest while the engine is actually running Chord Map.
+function restore_controls_from_patcher() {
+    var value;
+
+    value = patcher_control_value("quantizer_mode");
+    quantizerMode = menu_value(value, MODE_MENU_VALUES, MODE_ALIASES, quantizerMode);
+
+    value = patcher_control_value("chord_map");
+    harmonizerMap = menu_value(value, CHORD_MAP_MENU_VALUES, null, harmonizerMap);
+
+    value = patcher_control_value("harmony_change");
+    harmonyTiming = menu_value(value, TIMING_MENU_VALUES, null, harmonyTiming);
+
+    value = patcher_control_value("root_gravity");
+    rootGravity = menu_value(value, GRAVITY_MENU_VALUES, null, rootGravity) | 0;
+
+    value = patcher_control_value("movement");
+    if (value !== null) {
+        movementAmount = clamp(value | 0, 24, 48);
+    }
+
+    value = patcher_control_value("register_low");
+    if (value !== null) {
+        registerLow = clamp(value | 0, 0, 127);
+    }
+
+    value = patcher_control_value("register_high");
+    if (value !== null) {
+        registerHigh = clamp(value | 0, 0, 127);
+    }
+
+    if (registerLow > registerHigh) {
+        registerHigh = registerLow;
+    }
+
+    runtime_trace(
+        "RESTORE_CONTROLS\tmode=" + quantizerMode +
+        " map=" + harmonizerMap +
+        " timing=" + harmonyTiming +
+        " gravity=" + rootGravity +
+        " movement=" + movementAmount +
+        " register=" + registerLow + "-" + registerHigh
+    );
+}
+
+function patcher_control_value(varname) {
+    var object;
+    var value;
+
+    try {
+        if (!this.patcher || !this.patcher.getnamed) {
+            return null;
+        }
+        object = this.patcher.getnamed(varname);
+        if (!object || !object.getvalueof) {
+            return null;
+        }
+        value = object.getvalueof();
+        if (
+            value !== null && typeof value !== "string" &&
+            typeof value.length !== "undefined"
+        ) {
+            value = value.length > 0 ? value[0] : null;
+        }
+        return typeof value === "undefined" ? null : value;
+    } catch (error) {
+        runtime_trace("RESTORE_ERROR\t" + varname + "=" + error);
+        return null;
+    }
+}
+
+function menu_value(value, orderedValues, aliases, fallback) {
+    var normalized;
+
+    if (value === null) {
+        return fallback;
+    }
+    if (typeof value === "number") {
+        return orderedValues[value | 0] !== undefined
+            ? orderedValues[value | 0]
+            : fallback;
+    }
+
+    normalized = String(value).toLowerCase();
+    if (aliases && aliases.hasOwnProperty(normalized)) {
+        normalized = aliases[normalized];
+    }
+    return orderedValues.indexOf(normalized) >= 0 ? normalized : fallback;
+}
+
 function poll_harmony_global() {
     var globalVersion = harmonyGlobal.version;
     var globalChordVersion = harmonyGlobal.chordVersion;
+    var globalActiveValidVersion = harmonyGlobal.activeValidVersion;
 
     if (
+        typeof globalActiveValidVersion !== "undefined" &&
+        (globalActiveValidVersion | 0) !== lastSeenActiveValidVersion
+    ) {
+        sync_valid_notes_from_global(0);
+    }
+
+    if (
+        typeof globalActiveValidVersion === "undefined" &&
         typeof globalVersion !== "undefined" &&
         (globalVersion | 0) !== lastSeenHarmonyVersion
     ) {
@@ -119,6 +238,8 @@ function anything() {
         apply_harmony(arrayfromargs(arguments));
     } else if (messagename === "chord") {
         apply_chord(arrayfromargs(arguments));
+    } else if (messagename === "validnotes") {
+        apply_valid_notes(arrayfromargs(arguments));
     }
 }
 
@@ -136,6 +257,14 @@ function chord() {
     }
 
     apply_chord(arrayfromargs(arguments));
+}
+
+function validnotes() {
+    if (inlet !== 1) {
+        return;
+    }
+
+    apply_valid_notes(arrayfromargs(arguments));
 }
 
 function list() {
@@ -171,7 +300,36 @@ function apply_harmony(values) {
         return;
     }
 
-    receive_harmony(version, root, pcs, 0);
+    // New receivers publish a centralized validnotes snapshot immediately
+    // after this diagnostic harmony message. Once that protocol is visible,
+    // the quantizer no longer treats the derived set as independently active.
+    if (!hasActiveValidProtocol) {
+        receive_harmony(version, root, pcs, 0, "sysex");
+    }
+}
+
+function apply_valid_notes(values) {
+    var version;
+    var root;
+    var source;
+    var pcs;
+
+    // Payload: version, root, source, pc1, pc2, ... . An empty pitch-class
+    // list is meaningful: MIDI Note Field is selected but no set exists.
+    if (values.length < 3) {
+        return;
+    }
+
+    version = values[0] | 0;
+    root = positive_mod(values[1] | 0, 12);
+    source = String(values[2]);
+    pcs = normalize_pitch_classes(values.slice(3));
+    runtime_trace(
+        "RX_VALID\t" + version + "/" + source + "\troot=" + root +
+        " pcs=" + pcs.join(",")
+    );
+    hasActiveValidProtocol = 1;
+    receive_harmony(version, root, pcs, 0, source);
 }
 
 function apply_chord(values) {
@@ -192,6 +350,16 @@ function apply_chord(values) {
 }
 
 function sync_from_global(forceImmediate) {
+    if (typeof harmonyGlobal.activeValidVersion !== "undefined") {
+        sync_valid_notes_from_global(forceImmediate);
+    } else {
+        sync_legacy_harmony_from_global(forceImmediate);
+    }
+
+    sync_chord_from_global();
+}
+
+function sync_legacy_harmony_from_global(forceImmediate) {
     var globalVersion = harmonyGlobal.version;
     var globalRoot = harmonyGlobal.root;
     var globalPcs = harmonyGlobal.legalPitchClasses;
@@ -205,12 +373,30 @@ function sync_from_global(forceImmediate) {
             globalVersion | 0,
             positive_mod(globalRoot | 0, 12),
             normalize_pitch_classes(globalPcs),
-            forceImmediate ? 1 : 0
+            forceImmediate ? 1 : 0,
+            "sysex"
         );
     }
+}
 
+function sync_valid_notes_from_global(forceImmediate) {
+    var globalVersion = harmonyGlobal.activeValidVersion;
+    var globalRoot = harmonyGlobal.root;
+    var globalSource = harmonyGlobal.validNoteSource;
+    var globalPcs = harmonyGlobal.activeValidPitchClasses;
 
-    sync_chord_from_global();
+    if (typeof globalVersion === "undefined") {
+        return;
+    }
+
+    hasActiveValidProtocol = 1;
+    receive_harmony(
+        globalVersion | 0,
+        positive_mod(typeof globalRoot === "undefined" ? 0 : globalRoot | 0, 12),
+        normalize_pitch_classes(globalPcs || []),
+        forceImmediate ? 1 : 0,
+        typeof globalSource === "undefined" ? "sysex" : String(globalSource)
+    );
 }
 
 
@@ -234,23 +420,45 @@ function sync_chord_from_global() {
     );
 }
 
-function receive_harmony(version, root, pcs, forceImmediate) {
-    if (version === lastSeenHarmonyVersion && !forceImmediate) {
+function receive_harmony(version, root, pcs, forceImmediate, source) {
+    var isActiveProtocol = hasActiveValidProtocol;
+    var lastVersion = isActiveProtocol
+        ? lastSeenActiveValidVersion : lastSeenHarmonyVersion;
+
+    if (version === lastVersion && !forceImmediate) {
+        runtime_trace(
+            "IGNORE_DUPLICATE\t" + version + "/" + source +
+            "\tpcs=" + pcs.join(",")
+        );
         return;
     }
 
-    lastSeenHarmonyVersion = version;
+    if (isActiveProtocol) {
+        lastSeenActiveValidVersion = version;
+    } else {
+        lastSeenHarmonyVersion = version;
+    }
+    source = source || "sysex";
 
     if (
         forceImmediate ||
         legalPitchClasses.length === 0 ||
+        pcs.length === 0 ||
         harmonyTiming === "immediate"
     ) {
-        activate_harmony(version, root, pcs);
+        activate_harmony(version, root, pcs, source);
         return;
     }
 
-    pendingHarmony = { version: version, root: root, pcs: pcs.slice(0) };
+    pendingHarmony = {
+        version: version,
+        root: root,
+        pcs: pcs.slice(0),
+        source: source
+    };
+    runtime_trace(
+        "QUEUE\t" + version + "/" + source + "\tpcs=" + pcs.join(",")
+    );
     status("Harmony v" + version + " queued for " + timing_description());
 }
 
@@ -272,14 +480,23 @@ function receive_chord(version, root, notes) {
     );
 }
 
-function activate_harmony(version, root, pcs) {
+function activate_harmony(version, root, pcs, source) {
     harmonyVersion = version;
     harmonyRoot = root;
+    activeValidSource = source || "sysex";
     legalPitchClasses = pcs.slice(0);
     pendingHarmony = null;
+    runtime_trace(
+        "ACTIVE\t" + version + "/" + activeValidSource +
+        "\troot=" + harmonyRoot + " pcs=" + legalPitchClasses.join(",")
+    );
     status(
-        "Harmony v" + harmonyVersion + " | root " + NOTE_NAMES[harmonyRoot] +
-        " | legal: " + pitch_class_names(legalPitchClasses).join(" ") +
+        source_description() + " v" + harmonyVersion +
+        " | root " + NOTE_NAMES[harmonyRoot] +
+        " | legal: " +
+        (legalPitchClasses.length > 0
+            ? pitch_class_names(legalPitchClasses).join(" ")
+            : "waiting for complete set") +
         " | " + mode_description()
     );
 }
@@ -292,7 +509,16 @@ function apply_pending_harmony() {
     }
 
     harmony = pendingHarmony;
-    activate_harmony(harmony.version, harmony.root, harmony.pcs);
+    activate_harmony(
+        harmony.version,
+        harmony.root,
+        harmony.pcs,
+        harmony.source
+    );
+}
+
+function source_description() {
+    return activeValidSource === "midi" ? "MIDI Note Field" : "SysEx Intervals";
 }
 
 function tiebreakup(v) {
@@ -429,6 +655,26 @@ function bypass(v) {
 
 function panic() {
     var channel;
+    var key;
+    var parts;
+    var note;
+    var count;
+    var i;
+
+    // Send explicit Note Offs before discarding the mapping. Some hardware,
+    // including older MIDI implementations, does not act on CC 123 reliably.
+    for (key in outputNoteRefCounts) {
+        if (!outputNoteRefCounts.hasOwnProperty(key)) {
+            continue;
+        }
+        parts = key.split(":");
+        channel = parseInt(parts[0], 10);
+        note = parseInt(parts[1], 10);
+        count = Math.max(1, outputNoteRefCounts[key] | 0);
+        for (i = 0; i < count; i++) {
+            send_midi3(0x80 | ((channel - 1) & 0x0F), note, 0);
+        }
+    }
 
     activeNoteMappings = {};
     outputNoteRefCounts = {};
@@ -436,9 +682,11 @@ function panic() {
 
     for (channel = 1; channel <= 16; channel++) {
         send_midi3(0xB0 | ((channel - 1) & 0x0F), 123, 0);
+        // Center pitch bend (14-bit value 8192: LSB 0, MSB 64).
+        send_midi3(0xE0 | ((channel - 1) & 0x0F), 0, 64);
     }
 
-    status("All Notes Off sent");
+    status("Explicit Note Offs, All Notes Off and centered pitch bend sent");
 }
 
 function msg_int(value) {
@@ -585,6 +833,10 @@ function handle_note_on(channel, inputNote, velocity) {
         apply_pending_harmony();
     }
 
+    runtime_trace(
+        "INPUT_NOTE\tch=" + channel + " note=" + inputNote +
+        " velocity=" + velocity + " mode=" + quantizerMode
+    );
     outputNote = quantize_note(inputNote, channel, velocity);
     outputKey = note_key(channel, outputNote);
 
@@ -599,7 +851,56 @@ function handle_note_on(channel, inputNote, velocity) {
     }
 
     outputNoteRefCounts[outputKey] += 1;
+    runtime_trace(
+        "NOTE\t" + harmonyVersion + "/" + activeValidSource +
+        "\tch=" + channel + " in=" + inputNote + " out=" + outputNote +
+        " mode=" + quantizerMode + " pcs=" + legalPitchClasses.join(",")
+    );
+    status(
+        "TRACE ch" + channel + " " + midi_note_name(inputNote) +
+        " → " + midi_note_name(outputNote) + " | " + source_description() +
+        " v" + harmonyVersion + " | allowed " +
+        pitch_class_names(legalPitchClasses).join(" ")
+    );
     send_midi3(0x90 | ((channel - 1) & 0x0F), outputNote, velocity);
+}
+
+function midi_note_name(note) {
+    var value = clamp(note | 0, 0, 127);
+    return NOTE_NAMES[positive_mod(value, 12)] +
+        (Math.floor(value / 12) - 1);
+}
+
+function reset_runtime_trace(header) {
+    var file;
+    traceLineCount = 0;
+    if (typeof File === "undefined") {
+        return;
+    }
+    file = new File(TRACE_PATH, "write");
+    if (file.isopen) {
+        file.eof = 0;
+        file.position = 0;
+        file.writeline(header);
+        file.close();
+    }
+}
+
+function runtime_trace(line) {
+    var file;
+    if (typeof File === "undefined" || traceLineCount >= 1000) {
+        return;
+    }
+    file = new File(TRACE_PATH, "readwrite");
+    if (!file.isopen) {
+        return;
+    }
+    file.position = file.eof;
+    file.writeline(
+        String(new Date().getTime()) + "\t" + traceInstance + "\t" + line
+    );
+    file.close();
+    traceLineCount += 1;
 }
 
 function handle_note_off(channel, inputNote, velocity) {
@@ -680,7 +981,44 @@ function quantize_note(inputNote, channel, velocity) {
     ) {
         result = apply_root_gravity(result, velocity || 0);
     }
+
+    // Nearest modes normally preserve the incoming register. The displayed
+    // High value is nevertheless a hard safety ceiling: a stray high source
+    // note must never leave a hardware oscillator parked at an extreme pitch.
+    // Search against that ceiling instead of quantizing above it and then
+    // octave-folding the result, which can create a surprising one-octave jump
+    // at the top of an otherwise stepwise melody. Low notes stay transparent.
+    if (quantizerMode === "nearest" || quantizerMode === "chordnearest") {
+        result = clamp(result, 0, 127);
+        if (result > registerHigh) {
+            runtime_trace(
+                "SAFETY_LIMIT\tmode=" + quantizerMode + " note=" + result +
+                " ceiling=" + registerHigh
+            );
+            return nearest_mode_note_at_or_below(registerHigh, quantizerMode);
+        }
+        return result;
+    }
     return constrain_to_register(result);
+}
+
+function nearest_mode_note_at_or_below(ceiling, mode) {
+    var pitchClasses = mode === "chordnearest"
+        ? active_chord_pitch_classes()
+        : legalPitchClasses;
+    var candidate;
+
+    if (pitchClasses.length === 0) {
+        return clamp(ceiling | 0, 0, 127);
+    }
+
+    for (candidate = clamp(ceiling | 0, 0, 127); candidate >= 0; candidate--) {
+        if (pitchClasses.indexOf(positive_mod(candidate, 12)) >= 0) {
+            return candidate;
+        }
+    }
+
+    return clamp(ceiling | 0, 0, 127);
 }
 
 function nearest_quantize(note) {

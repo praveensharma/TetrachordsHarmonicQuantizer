@@ -8,7 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-function makeContext(sharedGlobals) {
+function makeContext(sharedGlobals, patcherValues) {
     const emitted = [];
     const named = [];
     const liveSets = [];
@@ -49,6 +49,21 @@ function makeContext(sharedGlobals) {
         }
     };
 
+    if (patcherValues) {
+        context.patcher = {
+            getnamed(varname) {
+                if (!Object.prototype.hasOwnProperty.call(patcherValues, varname)) {
+                    return null;
+                }
+                return {
+                    getvalueof() {
+                        return patcherValues[varname];
+                    }
+                };
+            }
+        };
+    }
+
     vm.createContext(context);
     return { context, emitted, named, liveSets };
 }
@@ -62,6 +77,24 @@ function loadScript(relativePath, harness) {
 }
 
 const sharedGlobals = {};
+
+// Autowatch recompilation must restore the parameter state that Ableton is
+// visibly holding instead of silently reverting the JavaScript globals.
+const restoredReceiver = makeContext({}, {
+    chord_channel: 1,
+    chord_hold: 1,
+    valid_note_source: 1,
+    valid_note_channel: 4
+});
+loadScript(
+    "Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js",
+    restoredReceiver
+);
+restoredReceiver.context.init();
+assert.strictEqual(restoredReceiver.context.chordCaptureChannel, 1);
+assert.strictEqual(restoredReceiver.context.chordHoldMode, "gate");
+assert.strictEqual(restoredReceiver.context.validNoteSource, "midi");
+assert.strictEqual(restoredReceiver.context.validNoteCaptureChannel, 4);
 
 const receiver = makeContext(sharedGlobals);
 loadScript(
@@ -83,10 +116,21 @@ assert.deepStrictEqual(
 );
 assert.strictEqual(sharedGlobals.tetrachords_harmony_v1.root, 0);
 assert.strictEqual(sharedGlobals.tetrachords_harmony_v1.scaleName, "Dorian");
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.derivedValidMidiNotes),
+    [60, 62, 63, 65, 67, 69, 70, 72]
+);
 assert.ok(receiver.named.length > 0, "receiver should broadcast an update");
 assert.deepStrictEqual(
-    receiver.named.slice(-1)[0],
+    receiver.named.find((message) => message[1] === "harmony"),
     ["tetrachords_harmony_bus_v1", "harmony", 1, 0, 0, 2, 3, 5, 7, 9, 10]
+);
+assert.deepStrictEqual(
+    receiver.named.slice(-1)[0],
+    [
+        "tetrachords_harmony_bus_v1", "validnotes", 1, 0, "sysex",
+        0, 2, 3, 5, 7, 9, 10
+    ]
 );
 assert.deepStrictEqual(
     receiver.liveSets.slice(-3),
@@ -195,15 +239,170 @@ assert.deepStrictEqual(
     []
 );
 
+// Eight field positions remain valid even when two positions use the exact
+// same MIDI note number rather than octave-separated instances.
+const duplicateFieldGlobals = {};
+const duplicateFieldReceiver = makeContext(duplicateFieldGlobals);
+loadScript(
+    "Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js",
+    duplicateFieldReceiver
+);
+duplicateFieldReceiver.context.validnotechannel(3);
+duplicateFieldReceiver.context.validsource("midi");
+[60, 60, 62, 63, 65, 67, 69, 70].forEach((note) => {
+    duplicateFieldReceiver.context.msg_int(0x92);
+    duplicateFieldReceiver.context.msg_int(note);
+    duplicateFieldReceiver.context.msg_int(100);
+});
+duplicateFieldReceiver.context.flushvalidnotes();
+assert.deepStrictEqual(
+    Array.from(
+        duplicateFieldGlobals.tetrachords_harmony_v1.midiFieldNotes
+    ),
+    [60, 60, 62, 63, 65, 67, 69, 70]
+);
+assert.deepStrictEqual(
+    Array.from(
+        duplicateFieldGlobals.tetrachords_harmony_v1
+            .midiFieldPitchClasses
+    ),
+    [0, 2, 3, 5, 7, 9, 10]
+);
+
+// A dedicated channel captures a Note On burst of any size as one atomic
+// valid-note field. It preserves repeated notes, ignores release-only bursts,
+// and never leaks field notes into chord capture.
+receiver.context.validnotechannel(3);
+receiver.context.validsource("midi");
+[60, 62, 63, 65, 67, 69, 70, 72].forEach((note) => {
+    receiver.context.msg_int(0x92);
+    receiver.context.msg_int(note);
+    receiver.context.msg_int(100);
+});
+receiver.context.flushvalidnotes();
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.midiFieldNotes),
+    [60, 62, 63, 65, 67, 69, 70, 72]
+);
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.midiFieldPitchClasses),
+    [0, 2, 3, 5, 7, 9, 10]
+);
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.activeChordNotes),
+    [48, 51, 55, 58]
+);
+assert.strictEqual(sharedGlobals.tetrachords_harmony_v1.validNoteSource, "midi");
+assert.strictEqual(receiver.context.comparison_label(), " • EXACT RAW MATCH");
+
+// Each new Note On burst completely replaces the previous field. Note Offs
+// never change the committed collection.
+receiver.context.msg_int(0x82);
+receiver.context.msg_int(60);
+receiver.context.msg_int(0);
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.midiFieldNotes),
+    [60, 62, 63, 65, 67, 69, 70, 72]
+);
+receiver.context.msg_int(0x92);
+receiver.context.msg_int(61);
+receiver.context.msg_int(100);
+receiver.context.flushvalidnotes();
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.midiFieldNotes),
+    [61]
+);
+assert.strictEqual(receiver.context.comparison_label(), " • DIFFERENT");
+
+[61, 62, 63, 65, 67, 69, 70, 72].forEach((note) => {
+    receiver.context.msg_int(0x82);
+    receiver.context.msg_int(note);
+    receiver.context.msg_int(0);
+});
+receiver.context.flushvalidnotes();
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.midiFieldNotes),
+    [61]
+);
+
+// A smaller non-empty burst is valid; this mode no longer requires eight notes.
+[61, 64, 66].forEach((note) => {
+    receiver.context.msg_int(0x92);
+    receiver.context.msg_int(note);
+    receiver.context.msg_int(100);
+});
+receiver.context.flushvalidnotes();
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.midiFieldNotes),
+    [61, 64, 66]
+);
+
+// Restore the original field for the downstream quantizer assertions.
+[61, 64, 66].forEach((note) => {
+    receiver.context.msg_int(0x82);
+    receiver.context.msg_int(note);
+    receiver.context.msg_int(0);
+});
+receiver.context.flushvalidnotes();
+[60, 62, 63, 65, 67, 69, 70, 72].forEach((note) => {
+    receiver.context.msg_int(0x92);
+    receiver.context.msg_int(note);
+    receiver.context.msg_int(100);
+});
+receiver.context.flushvalidnotes();
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.midiFieldNotes),
+    [60, 62, 63, 65, 67, 69, 70, 72]
+);
+
+// Switching back to SysEx after a reload restores its saved snapshot instead
+// of publishing an empty collection; switching to the field remains live.
+receiver.context.derivedValidMidiNotes = [];
+receiver.context.derivedValidPitchClasses = [];
+receiver.context.validsource("sysex");
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.activeValidPitchClasses),
+    [0, 2, 3, 5, 7, 9, 10]
+);
+assert.strictEqual(sharedGlobals.tetrachords_harmony_v1.validNoteSource, "sysex");
+receiver.context.validsource("midi");
+assert.deepStrictEqual(
+    Array.from(sharedGlobals.tetrachords_harmony_v1.activeValidPitchClasses),
+    [0, 2, 3, 5, 7, 9, 10]
+);
+assert.strictEqual(sharedGlobals.tetrachords_harmony_v1.validNoteSource, "midi");
+
 const quantizer = makeContext(sharedGlobals);
 loadScript(
-    "OXI_Harmonic_Quantizer/oxi_harmonic_quantizer.js",
+    "Harmonic_Quantizer/harmonic_quantizer.js",
     quantizer
 );
 quantizer.context.init();
 quantizer.context.inlet = 0;
 assert.strictEqual(quantizer.context.registerHigh, 48);
 assert.strictEqual(quantizer.context.quantizerMode, "harmonizer");
+
+const restoredQuantizer = makeContext(sharedGlobals, {
+    quantizer_mode: 1,
+    chord_map: 1,
+    harmony_change: 0,
+    root_gravity: 2,
+    movement: 37,
+    register_low: 48,
+    register_high: 64
+});
+loadScript(
+    "Harmonic_Quantizer/harmonic_quantizer.js",
+    restoredQuantizer
+);
+restoredQuantizer.context.init();
+assert.strictEqual(restoredQuantizer.context.quantizerMode, "nearest");
+assert.strictEqual(restoredQuantizer.context.harmonizerMap, "voicing");
+assert.strictEqual(restoredQuantizer.context.harmonyTiming, "immediate");
+assert.strictEqual(restoredQuantizer.context.rootGravity, 2);
+assert.strictEqual(restoredQuantizer.context.movementAmount, 37);
+assert.strictEqual(restoredQuantizer.context.registerLow, 48);
+assert.strictEqual(restoredQuantizer.context.registerHigh, 64);
 
 // Presentation labels normalize to the established internal mode names.
 [
@@ -263,6 +462,22 @@ assert.deepStrictEqual(
 // Return to the established nearest-note behavior for existing tests.
 quantizer.context.mode("nearest");
 
+// Transparent nearest modes never octave-wrap a low source note into the
+// configured generated-note register. C#1 moves one semitone to D1 here.
+quantizer.context.low(48);
+quantizer.context.high(64);
+assert.strictEqual(quantizer.context.quantize_note(25, 1, 100), 26);
+// The High parameter is a hard safety ceiling even for transparent modes.
+const safeHighNearest = quantizer.context.quantize_note(100, 1, 100);
+assert.ok(safeHighNearest >= 48 && safeHighNearest <= 64);
+// The boundary participates in note choice; do not pick F4 and octave-fold
+// it to F3 when D#4 is the nearest legal pitch below a ceiling of E4.
+quantizer.context.apply_harmony([7, 0, 0, 1, 3, 5, 6, 8, 10]);
+assert.strictEqual(quantizer.context.quantize_note(64, 1, 100), 63);
+assert.strictEqual(quantizer.context.quantize_note(65, 1, 100), 63);
+
+const timingBaseVersion = quantizer.context.harmonyVersion;
+
 // Channel 2: C#4 should tie upward to D4 in C Dorian.
 quantizer.context.msg_int(0x91);
 quantizer.context.msg_int(61);
@@ -309,6 +524,23 @@ assert.deepStrictEqual(
     [0xC1, 12]
 );
 
+// Panic explicitly releases mapped notes and recenters pitch bend on every
+// channel; it does not rely on CC 123 being implemented by the destination.
+quantizer.emitted.length = 0;
+quantizer.context.outputNoteRefCounts = {"1:72": 1};
+quantizer.context.panic();
+const panicBytes = quantizer.emitted
+    .filter((message) => message[0] === 0)
+    .map((message) => message[1]);
+assert.deepStrictEqual(panicBytes.slice(0, 3), [0x80, 72, 0]);
+assert.ok(
+    panicBytes.some((value, index) =>
+        value === 0xE0 &&
+        panicBytes[index + 1] === 0 &&
+        panicBytes[index + 2] === 64
+    )
+);
+
 // Channel 1 is quantized too; incoming channels are preserved but never filtered.
 quantizer.emitted.length = 0;
 quantizer.context.msg_int(0x90);
@@ -321,7 +553,7 @@ assert.deepStrictEqual(
     [0x90, 62, 99]
 );
 
-// OXI-track SysEx passes through byte-for-byte.
+// Source-track SysEx passes through byte-for-byte.
 quantizer.emitted.length = 0;
 [0xF0, 1, 2, 3, 0xF7].forEach((byte) => {
     quantizer.context.msg_int(byte);
@@ -354,19 +586,23 @@ assert.ok(constrained >= 48 && constrained <= 72);
 
 // Harmony timing can latch at the next note or a 4/4 MIDI-clock bar.
 quantizer.context.timing("nextnote");
-quantizer.context.apply_harmony([2, 2, 2, 4, 5, 7, 9, 11, 0]);
-assert.strictEqual(quantizer.context.harmonyVersion, 1);
+quantizer.context.apply_valid_notes([
+    timingBaseVersion + 1, 2, "sysex", 2, 4, 5, 7, 9, 11, 0
+]);
+assert.strictEqual(quantizer.context.harmonyVersion, timingBaseVersion);
 quantizer.context.handle_note_on(1, 60, 80);
-assert.strictEqual(quantizer.context.harmonyVersion, 2);
+assert.strictEqual(quantizer.context.harmonyVersion, timingBaseVersion + 1);
 
 quantizer.context.timing("nextbar");
-quantizer.context.apply_harmony([3, 5, 5, 7, 8, 10, 0, 2, 3]);
+quantizer.context.apply_valid_notes([
+    timingBaseVersion + 2, 5, "midi", 5, 7, 8, 10, 0, 2, 3
+]);
 for (let tick = 0; tick < 95; tick += 1) {
     quantizer.context.msg_int(0xF8);
 }
-assert.strictEqual(quantizer.context.harmonyVersion, 2);
+assert.strictEqual(quantizer.context.harmonyVersion, timingBaseVersion + 1);
 quantizer.context.msg_int(0xF8);
-assert.strictEqual(quantizer.context.harmonyVersion, 3);
+assert.strictEqual(quantizer.context.harmonyVersion, timingBaseVersion + 2);
 
 // Live must restore per-device settings. Presentation controls are registered
 // parameters with initial values, and no loadmess is allowed to overwrite the
@@ -375,8 +611,8 @@ const quantizerPatch = JSON.parse(fs.readFileSync(
     path.join(
         __dirname,
         "..",
-        "OXI_Harmonic_Quantizer",
-        "OXI Harmonic Quantizer.maxpat"
+        "Harmonic_Quantizer",
+        "Harmonic Quantizer.maxpat"
     ),
     "utf8"
 ));
@@ -397,6 +633,13 @@ function patchBox(patch, id) {
         .find((box) => box.id === id);
 }
 
+function hasPatchline(patch, sourceId, destinationId) {
+    return patch.patcher.lines.some((entry) =>
+        entry.patchline.source[0] === sourceId &&
+        entry.patchline.destination[0] === destinationId
+    );
+}
+
 [
     "obj-mode-menu",
     "obj-harmonizer-menu",
@@ -407,6 +650,10 @@ function patchBox(patch, id) {
     "obj-high-number"
 ].forEach((id) => {
     assert.strictEqual(patchBox(quantizerPatch, id).parameter_enable, 1);
+    assert.ok(
+        hasPatchline(quantizerPatch, "obj-thisdevice", id),
+        `live.thisdevice should restore ${id} after Ableton loads saved state`
+    );
 });
 assert.deepStrictEqual(
     patchBox(quantizerPatch, "obj-mode-menu")
@@ -446,6 +693,18 @@ assert.strictEqual(patchBox(quantizerPatch, "obj-movement-number").minimum, 24);
 assert.strictEqual(patchBox(quantizerPatch, "obj-movement-number").maximum, 48);
 assert.strictEqual(patchBox(receiverPatch, "obj-chord-channel-menu").parameter_enable, 1);
 assert.strictEqual(patchBox(receiverPatch, "obj-chord-hold-menu").parameter_enable, 1);
+assert.strictEqual(patchBox(receiverPatch, "obj-valid-source-menu").parameter_enable, 1);
+assert.strictEqual(patchBox(receiverPatch, "obj-valid-channel-menu").parameter_enable, 1);
+assert.deepStrictEqual(
+    patchBox(receiverPatch, "obj-valid-source-menu")
+        .saved_attribute_attributes.valueof.parameter_initial,
+    [0]
+);
+assert.deepStrictEqual(
+    patchBox(receiverPatch, "obj-valid-channel-menu")
+        .saved_attribute_attributes.valueof.parameter_initial,
+    [0]
+);
 assert.ok(
     !quantizerPatch.patcher.boxes.some((entry) =>
         /^obj-load-(mode|timing|gravity|movement|low|high|harmonizer-map)$/.test(

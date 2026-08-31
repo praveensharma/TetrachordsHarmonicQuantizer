@@ -961,13 +961,80 @@
       },
       {
         "box": {
+          "id": "obj-register-mode-menu",
+          "items": [
+            "limited",
+            ",",
+            "free"
+          ],
+          "maxclass": "umenu",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            535.0,
+            390.0,
+            80.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            445.0,
+            130.0,
+            75.0,
+            22.0
+          ],
+          "parameter_enable": 1,
+          "varname": "register_mode",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Register Mode",
+              "parameter_shortname": "Register",
+              "parameter_type": 2,
+              "parameter_mmax": 1,
+              "parameter_enum": [
+                "limited",
+                "free"
+              ],
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                0
+              ]
+            }
+          }
+        }
+      },
+      {
+        "box": {
+          "id": "obj-register-mode-prepend",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            630.0,
+            390.0,
+            135.0,
+            22.0
+          ],
+          "text": "prepend registermode"
+        }
+      },
+      {
+        "box": {
           "id": "obj-low-label",
           "maxclass": "comment",
           "numinlets": 1,
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            445.0,
+            530.0,
             132.0,
             30.0,
             20.0
@@ -995,7 +1062,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            475.0,
+            560.0,
             130.0,
             50.0,
             22.0
@@ -1043,7 +1110,7 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            540.0,
+            620.0,
             132.0,
             32.0,
             20.0
@@ -1071,7 +1138,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            575.0,
+            655.0,
             130.0,
             50.0,
             22.0
@@ -1567,6 +1634,42 @@
         "patchline": {
           "destination": [
             "obj-high-number",
+            0
+          ],
+          "source": [
+            "obj-thisdevice",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-register-mode-prepend",
+            0
+          ],
+          "source": [
+            "obj-register-mode-menu",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-js",
+            0
+          ],
+          "source": [
+            "obj-register-mode-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-register-mode-menu",
             0
           ],
           "source": [

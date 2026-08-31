@@ -379,6 +379,7 @@ loadScript(
 );
 quantizer.context.init();
 quantizer.context.inlet = 0;
+assert.strictEqual(quantizer.context.registerMode, "limited");
 assert.strictEqual(quantizer.context.registerHigh, 48);
 assert.strictEqual(quantizer.context.quantizerMode, "harmonizer");
 
@@ -388,6 +389,7 @@ const restoredQuantizer = makeContext(sharedGlobals, {
     harmony_change: 0,
     root_gravity: 2,
     movement: 37,
+    register_mode: 1,
     register_low: 48,
     register_high: 64
 });
@@ -401,6 +403,7 @@ assert.strictEqual(restoredQuantizer.context.harmonizerMap, "voicing");
 assert.strictEqual(restoredQuantizer.context.harmonyTiming, "immediate");
 assert.strictEqual(restoredQuantizer.context.rootGravity, 2);
 assert.strictEqual(restoredQuantizer.context.movementAmount, 37);
+assert.strictEqual(restoredQuantizer.context.registerMode, "free");
 assert.strictEqual(restoredQuantizer.context.registerLow, 48);
 assert.strictEqual(restoredQuantizer.context.registerHigh, 64);
 
@@ -475,6 +478,17 @@ assert.ok(safeHighNearest >= 48 && safeHighNearest <= 64);
 quantizer.context.apply_harmony([7, 0, 0, 1, 3, 5, 6, 8, 10]);
 assert.strictEqual(quantizer.context.quantize_note(64, 1, 100), 63);
 assert.strictEqual(quantizer.context.quantize_note(65, 1, 100), 63);
+
+// Free register preserves the source register and bypasses both boundaries.
+quantizer.context.registermode("free");
+const freeHighNearest = quantizer.context.quantize_note(100, 1, 100);
+assert.ok(freeHighNearest > 64 && freeHighNearest <= 127);
+assert.ok(quantizer.context.is_legal_note(freeHighNearest));
+quantizer.context.mode("harmonizer");
+quantizer.context.apply_chord([8, 0, 48, 51, 55, 58]);
+assert.ok(quantizer.context.quantize_note(64, 1, 100) > 48);
+quantizer.context.mode("nearest");
+quantizer.context.registermode("limited");
 
 const timingBaseVersion = quantizer.context.harmonyVersion;
 
@@ -646,6 +660,7 @@ function hasPatchline(patch, sourceId, destinationId) {
     "obj-timing-menu",
     "obj-gravity-menu",
     "obj-movement-number",
+    "obj-register-mode-menu",
     "obj-low-number",
     "obj-high-number"
 ].forEach((id) => {
@@ -683,6 +698,16 @@ assert.ok(
     !patchBox(quantizerPatch, "obj-mode-menu")
         .saved_attribute_attributes.valueof.parameter_enum
         .includes("sticky")
+);
+assert.deepStrictEqual(
+    patchBox(quantizerPatch, "obj-register-mode-menu")
+        .saved_attribute_attributes.valueof.parameter_enum,
+    ["limited", "free"]
+);
+assert.deepStrictEqual(
+    patchBox(quantizerPatch, "obj-register-mode-menu")
+        .saved_attribute_attributes.valueof.parameter_initial,
+    [0]
 );
 assert.deepStrictEqual(
     patchBox(quantizerPatch, "obj-high-number")

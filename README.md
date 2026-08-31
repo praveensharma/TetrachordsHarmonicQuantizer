@@ -206,7 +206,10 @@ an older Ableton Set. The menu is ordered and labeled as:
 The former `sticky` entry was behaviorally identical to `voicelead` and has
 been removed.
 
-The default register is MIDI 24–48. Quantizer and receiver presentation
+The **Register** menu selects **limited** or **free**. Limited uses the Low/High
+window (MIDI 24–48 by default). Free quantizes the harmonic pitch target but
+does not fold octaves or apply either register boundary, allowing the source
+sequencer to own register completely. Quantizer and receiver presentation
 controls are Live parameters: each device instance stores its settings in the
 Ableton Set and restores them without load-time defaults overwriting the saved
 state.

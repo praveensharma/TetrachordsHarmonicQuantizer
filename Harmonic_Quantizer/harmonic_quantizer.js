@@ -40,6 +40,7 @@ var quantizerMode = "harmonizer";
 var harmonizerMap = "pitchclass";
 var melodyState = {};
 var movementAmount = 24;
+var registerMode = "limited";
 var registerLow = 24;
 var registerHigh = 48;
 var rootGravity = 0;
@@ -64,6 +65,7 @@ var MODE_MENU_VALUES = [
 var CHORD_MAP_MENU_VALUES = ["pitchclass", "voicing"];
 var TIMING_MENU_VALUES = ["immediate", "nextnote", "nextbar"];
 var GRAVITY_MENU_VALUES = [0, 1, 2];
+var REGISTER_MENU_VALUES = ["limited", "free"];
 
 // Each source channel/note has a FIFO stack of output pitches.
 var activeNoteMappings = {};
@@ -131,6 +133,9 @@ function restore_controls_from_patcher() {
         movementAmount = clamp(value | 0, 24, 48);
     }
 
+    value = patcher_control_value("register_mode");
+    registerMode = menu_value(value, REGISTER_MENU_VALUES, null, registerMode);
+
     value = patcher_control_value("register_low");
     if (value !== null) {
         registerLow = clamp(value | 0, 0, 127);
@@ -151,7 +156,7 @@ function restore_controls_from_patcher() {
         " timing=" + harmonyTiming +
         " gravity=" + rootGravity +
         " movement=" + movementAmount +
-        " register=" + registerLow + "-" + registerHigh
+        " register=" + registerMode + "/" + registerLow + "-" + registerHigh
     );
 }
 
@@ -619,6 +624,18 @@ function movement(value) {
     status("Movement: " + movementAmount + "% (smooth to strong)");
 }
 
+function registermode(value) {
+    if (value !== "limited" && value !== "free") {
+        return;
+    }
+    registerMode = value;
+    status(
+        value === "free"
+            ? "Register: Free — preserve source octave"
+            : "Register: Limited — " + registerLow + " to " + registerHigh
+    );
+}
+
 function low(value) {
     registerLow = clamp(value | 0, 0, 127);
     if (registerLow > registerHigh) {
@@ -980,6 +997,13 @@ function quantize_note(inputNote, channel, velocity) {
         quantizerMode !== "chordnearest"
     ) {
         result = apply_root_gravity(result, velocity || 0);
+    }
+
+    // Free register quantizes the musical pitch target without any octave
+    // folding, Low/High window, or safety ceiling. The source sequencer owns
+    // register; this device only decides which notes belong to the harmony.
+    if (registerMode === "free") {
+        return clamp(result, 0, 127);
     }
 
     // Nearest modes normally preserve the incoming register. The displayed

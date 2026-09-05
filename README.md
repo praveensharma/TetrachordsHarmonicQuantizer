@@ -198,13 +198,30 @@ an older Ableton Set. The menu is ordered and labeled as:
 2. `scale-nearest`
 3. `chord-map`
 4. `scale-contour`
-5. `scale-smooth`
+5. `stateful-nearest`
 6. `scale-up`
 7. `scale-down`
 8. `scale-map`
 
-The former `sticky` entry was behaviorally identical to `voicelead` and has
-been removed.
+### Stateful Nearest mode
+
+**stateful-nearest** remembers the final MIDI pitch actually transmitted for
+each incoming MIDI channel. It scores every currently legal candidate against
+both the new input pitch and that voice's previous output. **Continuity** sets
+the balance: 0% is exactly Scale Nearest; higher values favor smaller movement.
+
+On the first Note On after the harmonic version changes, a previous pitch that
+remains legal receives a strong but finite common-tone bonus. A clearly
+different incoming gesture can still move the voice, and subsequent notes use
+ordinary stateful scoring so high continuity does not permanently freeze it.
+The status display shows input, previous output, final output, signed movement,
+and `[COMMON]` when a common tone was retained. State is independent per MIDI
+channel and per device instance. **Reset Voices** clears only that memory;
+Panic clears it as part of its broader note-off and controller reset.
+
+Stateful Nearest does not retune an already sounding note when harmony changes.
+It makes its transition on the next Note On. The former Scale Smooth algorithm
+and its overlapping Sticky alias have been replaced by this mode.
 
 The **Register** menu selects **limited** or **free**. Limited uses the Low/High
 window (MIDI 24–48 by default). Free quantizes the harmonic pitch target but

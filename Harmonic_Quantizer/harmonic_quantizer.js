@@ -18,6 +18,8 @@ var harmonyGlobal = new Global(GLOBAL_NAME);
 var NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 var legalPitchClasses = [];
+var previousLegalPitchClasses = [];
+var activeValidMidiNotes = [];
 var harmonyVersion = -1;
 var lastSeenHarmonyVersion = -1;
 var lastSeenActiveValidVersion = -1;
@@ -39,7 +41,9 @@ var enabled = 1;
 var quantizerMode = "harmonizer";
 var harmonizerMap = "pitchclass";
 var melodyState = {};
-var movementAmount = 24;
+var voiceState = {};
+var lastVoiceDecision = {};
+var continuityAmount = 60;
 var registerMode = "limited";
 var registerLow = 24;
 var registerHigh = 48;
@@ -52,7 +56,9 @@ var MODE_ALIASES = {
     "scale-nearest": "nearest",
     "chord-map": "harmonizer",
     "scale-contour": "melody",
-    "scale-smooth": "voicelead",
+    "stateful-nearest": "statefulnearest",
+    "scale-smooth": "statefulnearest",
+    "voicelead": "statefulnearest",
     "scale-up": "up",
     "scale-down": "down",
     "scale-map": "chromatic"
@@ -60,7 +66,7 @@ var MODE_ALIASES = {
 
 var MODE_MENU_VALUES = [
     "chordnearest", "nearest", "harmonizer", "melody",
-    "voicelead", "up", "down", "chromatic"
+    "statefulnearest", "up", "down", "chromatic"
 ];
 var CHORD_MAP_MENU_VALUES = ["pitchclass", "voicing"];
 var TIMING_MENU_VALUES = ["immediate", "nextnote", "nextbar"];
@@ -128,9 +134,9 @@ function restore_controls_from_patcher() {
     value = patcher_control_value("root_gravity");
     rootGravity = menu_value(value, GRAVITY_MENU_VALUES, null, rootGravity) | 0;
 
-    value = patcher_control_value("movement");
+    value = patcher_control_value("continuity");
     if (value !== null) {
-        movementAmount = clamp(value | 0, 24, 48);
+        continuityAmount = clamp(value | 0, 0, 100);
     }
 
     value = patcher_control_value("register_mode");
@@ -155,7 +161,7 @@ function restore_controls_from_patcher() {
         " map=" + harmonizerMap +
         " timing=" + harmonyTiming +
         " gravity=" + rootGravity +
-        " movement=" + movementAmount +
+        " continuity=" + continuityAmount +
         " register=" + registerMode + "/" + registerLow + "-" + registerHigh
     );
 }
@@ -334,6 +340,7 @@ function apply_valid_notes(values) {
         " pcs=" + pcs.join(",")
     );
     hasActiveValidProtocol = 1;
+    sync_active_valid_midi_notes();
     receive_harmony(version, root, pcs, 0, source);
 }
 
@@ -395,12 +402,19 @@ function sync_valid_notes_from_global(forceImmediate) {
     }
 
     hasActiveValidProtocol = 1;
+    sync_active_valid_midi_notes();
     receive_harmony(
         globalVersion | 0,
         positive_mod(typeof globalRoot === "undefined" ? 0 : globalRoot | 0, 12),
         normalize_pitch_classes(globalPcs || []),
         forceImmediate ? 1 : 0,
         typeof globalSource === "undefined" ? "sysex" : String(globalSource)
+    );
+}
+
+function sync_active_valid_midi_notes() {
+    activeValidMidiNotes = normalize_midi_notes(
+        harmonyGlobal.activeValidMidiNotes || []
     );
 }
 
@@ -486,6 +500,7 @@ function receive_chord(version, root, notes) {
 }
 
 function activate_harmony(version, root, pcs, source) {
+    previousLegalPitchClasses = legalPitchClasses.slice(0);
     harmonyVersion = version;
     harmonyRoot = root;
     activeValidSource = source || "sysex";
@@ -542,10 +557,9 @@ function mode(value) {
         value === "chordnearest" ||
         value === "chromatic" ||
         value === "melody" ||
-        value === "voicelead" ||
+        value === "statefulnearest" ||
         value === "up" ||
-        value === "down" ||
-        value === "sticky"
+        value === "down"
     ) {
         quantizerMode = value;
         status(mode_description());
@@ -567,8 +581,8 @@ function melody() {
     mode("melody");
 }
 
-function voicelead() {
-    mode("voicelead");
+function statefulnearest() {
+    mode("statefulnearest");
 }
 
 function nearest() {
@@ -589,10 +603,6 @@ function up() {
 
 function down() {
     mode("down");
-}
-
-function sticky() {
-    mode("sticky");
 }
 
 function timing(value) {
@@ -619,9 +629,9 @@ function timing_description() {
     return "immediately";
 }
 
-function movement(value) {
-    movementAmount = clamp(value | 0, 24, 48);
-    status("Movement: " + movementAmount + "% (smooth to strong)");
+function continuity(value) {
+    continuityAmount = clamp(value | 0, 0, 100);
+    status("Continuity: " + continuityAmount + "%");
 }
 
 function registermode(value) {
@@ -696,6 +706,8 @@ function panic() {
     activeNoteMappings = {};
     outputNoteRefCounts = {};
     melodyState = {};
+    voiceState = {};
+    lastVoiceDecision = {};
 
     for (channel = 1; channel <= 16; channel++) {
         send_midi3(0xB0 | ((channel - 1) & 0x0F), 123, 0);
@@ -704,6 +716,12 @@ function panic() {
     }
 
     status("Explicit Note Offs, All Notes Off and centered pitch bend sent");
+}
+
+function resetvoices() {
+    voiceState = {};
+    lastVoiceDecision = {};
+    status("Voice memory reset — next notes use Scale Nearest");
 }
 
 function msg_int(value) {
@@ -843,6 +861,8 @@ function process_channel_message(statusByte, data1, data2) {
 
 function handle_note_on(channel, inputNote, velocity) {
     var outputNote;
+    var previousVoice = voiceState.hasOwnProperty(channel)
+        ? copy_voice_state(voiceState[channel]) : null;
     var sourceKey = note_key(channel, inputNote);
     var outputKey;
 
@@ -868,18 +888,86 @@ function handle_note_on(channel, inputNote, velocity) {
     }
 
     outputNoteRefCounts[outputKey] += 1;
+    commit_voice_state(channel, inputNote, outputNote, previousVoice);
     runtime_trace(
         "NOTE\t" + harmonyVersion + "/" + activeValidSource +
         "\tch=" + channel + " in=" + inputNote + " out=" + outputNote +
         " mode=" + quantizerMode + " pcs=" + legalPitchClasses.join(",")
     );
-    status(
-        "TRACE ch" + channel + " " + midi_note_name(inputNote) +
-        " → " + midi_note_name(outputNote) + " | " + source_description() +
-        " v" + harmonyVersion + " | allowed " +
-        pitch_class_names(legalPitchClasses).join(" ")
-    );
+    if (quantizerMode === "statefulnearest") {
+        status(stateful_voice_status(channel));
+    } else {
+        status(
+            "TRACE ch" + channel + " " + midi_note_name(inputNote) +
+            " → " + midi_note_name(outputNote) + " | " + source_description() +
+            " v" + harmonyVersion + " | allowed " +
+            pitch_class_names(legalPitchClasses).join(" ")
+        );
+    }
     send_midi3(0x90 | ((channel - 1) & 0x0F), outputNote, velocity);
+}
+
+function copy_voice_state(state) {
+    if (!state) {
+        return null;
+    }
+    return {
+        input: state.input,
+        output: state.output,
+        version: state.version
+    };
+}
+
+function commit_voice_state(channel, inputNote, outputNote, previousVoice) {
+    var harmonyChanged = previousVoice &&
+        previousVoice.version !== harmonyVersion;
+    var common = harmonyChanged &&
+        is_legal_note(previousVoice.output) &&
+        previousVoice.output === outputNote;
+    var movement = previousVoice ? outputNote - previousVoice.output : 0;
+
+    voiceState[channel] = {
+        input: inputNote,
+        output: outputNote,
+        version: harmonyVersion
+    };
+    lastVoiceDecision[channel] = {
+        input: inputNote,
+        previous: previousVoice ? previousVoice.output : null,
+        output: outputNote,
+        movement: movement,
+        common: common ? 1 : 0,
+        version: harmonyVersion
+    };
+
+    runtime_trace(
+        "VOICE\tch=" + channel +
+        " in=" + inputNote +
+        " prev=" + (previousVoice ? previousVoice.output : "none") +
+        " out=" + outputNote +
+        " move=" + signed_number(movement) +
+        " continuity=" + continuityAmount +
+        (common ? " COMMON" : "")
+    );
+}
+
+function stateful_voice_status(channel) {
+    var decision = lastVoiceDecision[channel];
+
+    if (!decision) {
+        return "Stateful Nearest waiting for voice " + channel;
+    }
+    return "V" + channel + " IN " + midi_note_name(decision.input) +
+        " PREV " + (decision.previous === null
+            ? "—" : midi_note_name(decision.previous)) +
+        " OUT " + midi_note_name(decision.output) +
+        " MOVE " + signed_number(decision.movement) +
+        (decision.common ? " [COMMON]" : "") +
+        " | Continuity " + continuityAmount + "% | v" + decision.version;
+}
+
+function signed_number(value) {
+    return value > 0 ? "+" + value : String(value);
 }
 
 function midi_note_name(note) {
@@ -956,6 +1044,8 @@ function handle_note_off(channel, inputNote, velocity) {
 function quantize_note(inputNote, channel, velocity) {
     var note = clamp(inputNote | 0, 0, 127);
     var result;
+    var statefulHadPrior = quantizerMode === "statefulnearest" &&
+        voiceState.hasOwnProperty(channel || 1);
 
     if (
         legalPitchClasses.length === 0 &&
@@ -980,14 +1070,12 @@ function quantize_note(inputNote, channel, velocity) {
         result = chromatic_to_harmony(note);
     } else if (quantizerMode === "melody") {
         result = melody_quantize(note, channel || 1);
-    } else if (quantizerMode === "voicelead") {
-        result = voicelead_quantize(note, channel || 1);
+    } else if (quantizerMode === "statefulnearest") {
+        result = stateful_nearest_quantize(note, channel || 1);
     } else if (quantizerMode === "up") {
         result = directional_quantize(note, 1);
     } else if (quantizerMode === "down") {
         result = directional_quantize(note, -1);
-    } else if (quantizerMode === "sticky") {
-        result = voicelead_quantize(note, channel || 1);
     } else {
         result = nearest_quantize(note);
     }
@@ -1012,7 +1100,12 @@ function quantize_note(inputNote, channel, velocity) {
     // Search against that ceiling instead of quantizing above it and then
     // octave-folding the result, which can create a surprising one-octave jump
     // at the top of an otherwise stepwise melody. Low notes stay transparent.
-    if (quantizerMode === "nearest" || quantizerMode === "chordnearest") {
+    if (
+        quantizerMode === "nearest" ||
+        quantizerMode === "chordnearest" ||
+        (quantizerMode === "statefulnearest" &&
+         (!statefulHadPrior || continuityAmount === 0))
+    ) {
         result = clamp(result, 0, 127);
         if (result > registerHigh) {
             runtime_trace(
@@ -1169,37 +1262,97 @@ function melody_quantize(note, channel) {
     return result;
 }
 
-function voicelead_quantize(note, channel) {
-    var degrees = harmony_degrees();
-    var prior = melodyState[channel];
-    var strongTarget = chromatic_to_harmony(note);
-    var smoothTarget = strongTarget;
-    var retainedDegree;
-    var blendedTarget;
-    var result;
+function stateful_nearest_quantize(note, channel) {
+    var prior = voiceState[channel];
+    var candidates;
+    var continuity;
+    var previousWeight;
+    var harmonyChanged;
+    var best;
+    var bestScore = Infinity;
+    var bestInputDistance = Infinity;
+    var bestPreviousDistance = Infinity;
+    var i;
+    var candidate;
+    var inputDistance;
+    var previousDistance;
+    var score;
 
-    if (prior) {
-        retainedDegree = prior.degree;
-        smoothTarget = degree_note_near(
-            prior.output + (note - prior.input),
-            retainedDegree,
-            degrees
-        );
+    // The first note and Continuity 0% are deliberately identical to Scale
+    // Nearest. This gives the studio test an exact, trustworthy A/B endpoint.
+    if (!prior || continuityAmount === 0) {
+        return nearest_quantize(note);
     }
 
-    blendedTarget = Math.round(
-        smoothTarget * (100 - movementAmount) / 100 +
-        strongTarget * movementAmount / 100
-    );
-    result = nearest_quantize(blendedTarget);
+    candidates = stateful_candidates();
+    if (candidates.length === 0) {
+        return nearest_quantize(note);
+    }
 
-    melodyState[channel] = {
-        input: note,
-        output: result,
-        degree: degree_index_for_note(result, degrees),
-        version: harmonyVersion
-    };
-    return result;
+    continuity = continuityAmount / 100;
+    previousWeight = 3 * continuity;
+    harmonyChanged = prior.version !== harmonyVersion;
+
+    for (i = 0; i < candidates.length; i++) {
+        candidate = candidates[i];
+        inputDistance = Math.abs(candidate - note);
+        previousDistance = Math.abs(candidate - prior.output);
+
+        // Squared distances produce a useful compromise between the two
+        // targets. A linear weighted sum would let the heavier endpoint win
+        // completely and make high continuity permanently sticky.
+        score = inputDistance * inputDistance +
+            previousWeight * previousDistance * previousDistance;
+
+        // On the first Note On after a harmonic change, reward retaining the
+        // exact previous pitch when it remains legal. The bonus is deliberately
+        // finite: a clearly different incoming gesture can still move the line.
+        if (
+            harmonyChanged &&
+            candidate === prior.output &&
+            is_legal_note(candidate)
+        ) {
+            score -= 64 * continuity;
+        }
+
+        if (
+            score < bestScore ||
+            (score === bestScore && inputDistance < bestInputDistance) ||
+            (score === bestScore && inputDistance === bestInputDistance &&
+             previousDistance < bestPreviousDistance) ||
+            (score === bestScore && inputDistance === bestInputDistance &&
+             previousDistance === bestPreviousDistance &&
+             prefer_candidate(candidate, best))
+        ) {
+            best = candidate;
+            bestScore = score;
+            bestInputDistance = inputDistance;
+            bestPreviousDistance = previousDistance;
+        }
+    }
+
+    return typeof best === "undefined" ? nearest_quantize(note) : best;
+}
+
+function stateful_candidates() {
+    var low = registerMode === "limited" ? registerLow : 0;
+    var high = registerMode === "limited" ? registerHigh : 127;
+    var candidates = [];
+    var note;
+
+    for (note = low; note <= high; note++) {
+        if (is_legal_note(note)) {
+            candidates.push(note);
+        }
+    }
+    return candidates;
+}
+
+function prefer_candidate(candidate, currentBest) {
+    if (typeof currentBest === "undefined") {
+        return true;
+    }
+    return preferUpwardTie ? candidate > currentBest : candidate < currentBest;
 }
 
 function mode_description() {
@@ -1217,17 +1370,14 @@ function mode_description() {
     if (quantizerMode === "melody") {
         return "Melody: preserve direction and degree contour";
     }
-    if (quantizerMode === "voicelead") {
-        return "Voice Lead: retain degrees with minimum movement";
+    if (quantizerMode === "statefulnearest") {
+        return "Stateful Nearest: continuity " + continuityAmount + "%";
     }
     if (quantizerMode === "up") {
         return "Directional: quantize upward only";
     }
     if (quantizerMode === "down") {
         return "Directional: quantize downward only";
-    }
-    if (quantizerMode === "sticky") {
-        return "Sticky: voice-led melodic contour";
     }
     return "Nearest: closest allowed Tetrachords note";
 }

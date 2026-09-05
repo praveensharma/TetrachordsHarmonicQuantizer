@@ -395,6 +395,70 @@
       },
       {
         "box": {
+          "id": "obj-reset-voices-button",
+          "maxclass": "button",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            "bang"
+          ],
+          "patching_rect": [
+            20.0,
+            465.0,
+            20.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            595.0,
+            99.0,
+            20.0,
+            20.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-reset-voices-label",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            50.0,
+            465.0,
+            90.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            620.0,
+            100.0,
+            90.0,
+            20.0
+          ],
+          "text": "Reset Voices"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-reset-voices-message",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            155.0,
+            465.0,
+            75.0,
+            22.0
+          ],
+          "text": "resetvoices"
+        }
+      },
+      {
+        "box": {
           "id": "obj-thisdevice",
           "maxclass": "newobj",
           "numinlets": 1,
@@ -539,7 +603,7 @@
             ",",
             "scale-contour",
             ",",
-            "scale-smooth",
+            "stateful-nearest",
             ",",
             "scale-up",
             ",",
@@ -581,7 +645,7 @@
                 "scale-nearest",
                 "chord-map",
                 "scale-contour",
-                "scale-smooth",
+                "stateful-nearest",
                 "scale-up",
                 "scale-down",
                 "scale-map"
@@ -869,7 +933,7 @@
       },
       {
         "box": {
-          "id": "obj-movement-label",
+          "id": "obj-continuity-label",
           "maxclass": "comment",
           "numinlets": 1,
           "numoutlets": 0,
@@ -880,15 +944,15 @@
             70.0,
             20.0
           ],
-          "text": "Movement"
+          "text": "Continuity"
         }
       },
       {
         "box": {
-          "id": "obj-movement-number",
+          "id": "obj-continuity-number",
           "maxclass": "number",
-          "maximum": 48,
-          "minimum": 24,
+          "maximum": 100,
+          "minimum": 0,
           "numinlets": 1,
           "numoutlets": 2,
           "outlettype": [
@@ -909,17 +973,17 @@
             22.0
           ],
           "parameter_enable": 1,
-          "varname": "movement",
+          "varname": "continuity",
           "saved_attribute_attributes": {
             "valueof": {
-              "parameter_longname": "Movement",
-              "parameter_shortname": "Movement",
+              "parameter_longname": "Continuity",
+              "parameter_shortname": "Continuity",
               "parameter_type": 3,
-              "parameter_mmin": 24,
-              "parameter_mmax": 48,
+              "parameter_mmin": 0,
+              "parameter_mmax": 100,
               "parameter_initial_enable": 1,
               "parameter_initial": [
-                24
+                60
               ]
             }
           }
@@ -927,7 +991,7 @@
       },
       {
         "box": {
-          "id": "obj-movement-prepend",
+          "id": "obj-continuity-prepend",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 1,
@@ -940,7 +1004,7 @@
             110.0,
             22.0
           ],
-          "text": "prepend movement"
+          "text": "prepend continuity"
         }
       },
       {
@@ -1213,6 +1277,30 @@
       {
         "patchline": {
           "destination": [
+            "obj-reset-voices-message",
+            0
+          ],
+          "source": [
+            "obj-reset-voices-button",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-js",
+            0
+          ],
+          "source": [
+            "obj-reset-voices-message",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
             "obj-js",
             0
           ],
@@ -1465,11 +1553,11 @@
       {
         "patchline": {
           "destination": [
-            "obj-movement-prepend",
+            "obj-continuity-prepend",
             0
           ],
           "source": [
-            "obj-movement-number",
+            "obj-continuity-number",
             0
           ]
         }
@@ -1481,7 +1569,7 @@
             0
           ],
           "source": [
-            "obj-movement-prepend",
+            "obj-continuity-prepend",
             0
           ]
         }
@@ -1609,7 +1697,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-movement-number",
+            "obj-continuity-number",
             0
           ],
           "source": [

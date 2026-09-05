@@ -379,6 +379,10 @@ loadScript(
 );
 quantizer.context.init();
 quantizer.context.inlet = 0;
+assert.deepStrictEqual(
+    Array.from(quantizer.context.activeValidMidiNotes),
+    [60, 62, 63, 65, 67, 69, 70, 72]
+);
 assert.strictEqual(quantizer.context.registerMode, "limited");
 assert.strictEqual(quantizer.context.registerHigh, 48);
 assert.strictEqual(quantizer.context.quantizerMode, "harmonizer");
@@ -388,7 +392,7 @@ const restoredQuantizer = makeContext(sharedGlobals, {
     chord_map: 1,
     harmony_change: 0,
     root_gravity: 2,
-    movement: 37,
+    continuity: 72,
     register_mode: 1,
     register_low: 48,
     register_high: 64
@@ -402,7 +406,7 @@ assert.strictEqual(restoredQuantizer.context.quantizerMode, "nearest");
 assert.strictEqual(restoredQuantizer.context.harmonizerMap, "voicing");
 assert.strictEqual(restoredQuantizer.context.harmonyTiming, "immediate");
 assert.strictEqual(restoredQuantizer.context.rootGravity, 2);
-assert.strictEqual(restoredQuantizer.context.movementAmount, 37);
+assert.strictEqual(restoredQuantizer.context.continuityAmount, 72);
 assert.strictEqual(restoredQuantizer.context.registerMode, "free");
 assert.strictEqual(restoredQuantizer.context.registerLow, 48);
 assert.strictEqual(restoredQuantizer.context.registerHigh, 64);
@@ -413,7 +417,7 @@ assert.strictEqual(restoredQuantizer.context.registerHigh, 64);
     ["scale-nearest", "nearest"],
     ["chord-map", "harmonizer"],
     ["scale-contour", "melody"],
-    ["scale-smooth", "voicelead"],
+    ["stateful-nearest", "statefulnearest"],
     ["scale-up", "up"],
     ["scale-down", "down"],
     ["scale-map", "chromatic"]
@@ -490,7 +494,7 @@ assert.ok(quantizer.context.quantize_note(64, 1, 100) > 48);
 quantizer.context.mode("nearest");
 quantizer.context.registermode("limited");
 
-const timingBaseVersion = quantizer.context.harmonyVersion;
+let timingBaseVersion = quantizer.context.harmonyVersion;
 
 // Channel 2: C#4 should tie upward to D4 in C Dorian.
 quantizer.context.msg_int(0x91);
@@ -587,10 +591,71 @@ assert.ok(quantizer.context.is_legal_note(melodyFirst));
 assert.ok(quantizer.context.is_legal_note(melodySecond));
 assert.ok(melodySecond >= melodyFirst);
 
-quantizer.context.mode("voicelead");
-quantizer.context.movement(25);
-const voiceLed = quantizer.context.quantize_note(67, 1, 80);
-assert.ok(quantizer.context.is_legal_note(voiceLed));
+// Stateful Nearest is independently stateful per channel. At 0% it is exactly
+// Scale Nearest; after a harmony change, high continuity retains a legal common
+// tone once, then continues moving toward repeated incoming requests.
+quantizer.context.resetvoices();
+quantizer.context.mode("stateful-nearest");
+quantizer.context.registermode("free");
+quantizer.context.continuity(0);
+quantizer.context.timing("immediate");
+quantizer.context.apply_valid_notes([
+    100, 0, "sysex", 0, 2, 4, 5, 7, 9, 11
+]);
+quantizer.emitted.length = 0;
+quantizer.context.handle_note_on(1, 61, 100);
+assert.deepStrictEqual(
+    quantizer.emitted.filter((message) => message[0] === 0)
+        .map((message) => message[1]).slice(-3),
+    [0x90, 62, 100]
+);
+assert.strictEqual(quantizer.context.voiceState[1].output, 62);
+quantizer.context.handle_note_off(1, 61, 0);
+
+quantizer.context.continuity(100);
+quantizer.context.apply_valid_notes([
+    101, 0, "sysex", 0, 2, 3, 5, 7, 8, 10
+]);
+quantizer.emitted.length = 0;
+quantizer.context.handle_note_on(1, 67, 100);
+assert.deepStrictEqual(
+    quantizer.emitted.filter((message) => message[0] === 0)
+        .map((message) => message[1]).slice(-3),
+    [0x90, 62, 100]
+);
+assert.strictEqual(quantizer.context.lastVoiceDecision[1].common, 1);
+quantizer.context.handle_note_off(1, 67, 0);
+
+quantizer.emitted.length = 0;
+quantizer.context.handle_note_on(1, 67, 100);
+assert.ok(quantizer.context.voiceState[1].output > 62);
+assert.strictEqual(quantizer.context.lastVoiceDecision[1].common, 0);
+quantizer.context.handle_note_off(1, 67, 0);
+
+quantizer.context.continuity(0);
+quantizer.context.handle_note_on(1, 67, 100);
+assert.strictEqual(quantizer.context.voiceState[1].output, 67);
+quantizer.context.handle_note_off(1, 67, 0);
+quantizer.context.handle_note_on(2, 72, 100);
+assert.strictEqual(quantizer.context.voiceState[2].output, 72);
+assert.strictEqual(quantizer.context.voiceState[1].output, 67);
+quantizer.context.handle_note_off(2, 72, 0);
+
+// The remembered pitch is the final transmitted result after register limits.
+quantizer.context.registermode("limited");
+quantizer.context.low(48);
+quantizer.context.high(64);
+quantizer.context.resetvoices();
+quantizer.context.continuity(100);
+quantizer.context.handle_note_on(3, 100, 100);
+assert.ok(quantizer.context.voiceState[3].output <= 64);
+assert.strictEqual(
+    quantizer.context.voiceState[3].output,
+    quantizer.context.lastVoiceDecision[3].output
+);
+quantizer.context.handle_note_off(3, 100, 0);
+quantizer.context.resetvoices();
+assert.deepStrictEqual(Object.keys(quantizer.context.voiceState), []);
 
 // Register constraints keep generated notes in the requested range.
 quantizer.context.low(48);
@@ -599,6 +664,7 @@ const constrained = quantizer.context.quantize_note(100, 2, 80);
 assert.ok(constrained >= 48 && constrained <= 72);
 
 // Harmony timing can latch at the next note or a 4/4 MIDI-clock bar.
+timingBaseVersion = quantizer.context.harmonyVersion;
 quantizer.context.timing("nextnote");
 quantizer.context.apply_valid_notes([
     timingBaseVersion + 1, 2, "sysex", 2, 4, 5, 7, 9, 11, 0
@@ -659,7 +725,7 @@ function hasPatchline(patch, sourceId, destinationId) {
     "obj-harmonizer-menu",
     "obj-timing-menu",
     "obj-gravity-menu",
-    "obj-movement-number",
+    "obj-continuity-number",
     "obj-register-mode-menu",
     "obj-low-number",
     "obj-high-number"
@@ -678,7 +744,7 @@ assert.deepStrictEqual(
         "scale-nearest",
         "chord-map",
         "scale-contour",
-        "scale-smooth",
+        "stateful-nearest",
         "scale-up",
         "scale-down",
         "scale-map"
@@ -714,8 +780,27 @@ assert.deepStrictEqual(
         .saved_attribute_attributes.valueof.parameter_initial,
     [48]
 );
-assert.strictEqual(patchBox(quantizerPatch, "obj-movement-number").minimum, 24);
-assert.strictEqual(patchBox(quantizerPatch, "obj-movement-number").maximum, 48);
+assert.strictEqual(patchBox(quantizerPatch, "obj-continuity-number").minimum, 0);
+assert.strictEqual(patchBox(quantizerPatch, "obj-continuity-number").maximum, 100);
+assert.deepStrictEqual(
+    patchBox(quantizerPatch, "obj-continuity-number")
+        .saved_attribute_attributes.valueof.parameter_initial,
+    [60]
+);
+assert.ok(
+    hasPatchline(
+        quantizerPatch,
+        "obj-reset-voices-button",
+        "obj-reset-voices-message"
+    )
+);
+assert.ok(
+    hasPatchline(
+        quantizerPatch,
+        "obj-reset-voices-message",
+        "obj-js"
+    )
+);
 assert.strictEqual(patchBox(receiverPatch, "obj-chord-channel-menu").parameter_enable, 1);
 assert.strictEqual(patchBox(receiverPatch, "obj-chord-hold-menu").parameter_enable, 1);
 assert.strictEqual(patchBox(receiverPatch, "obj-valid-source-menu").parameter_enable, 1);
@@ -732,11 +817,12 @@ assert.deepStrictEqual(
 );
 assert.ok(
     !quantizerPatch.patcher.boxes.some((entry) =>
-        /^obj-load-(mode|timing|gravity|movement|low|high|harmonizer-map)$/.test(
+        /^obj-load-(mode|timing|gravity|continuity|low|high|harmonizer-map)$/.test(
             entry.box.id || ""
         )
     )
 );
+assert.ok(!patchBox(quantizerPatch, "obj-movement-number"));
 assert.ok(
     !receiverPatch.patcher.boxes.some((entry) =>
         /^obj-load-chord-(channel|hold)$/.test(entry.box.id || "")

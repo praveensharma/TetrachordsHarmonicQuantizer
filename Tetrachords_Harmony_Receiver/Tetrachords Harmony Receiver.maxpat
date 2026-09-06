@@ -75,7 +75,7 @@
             490.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             335,
             10,
@@ -181,7 +181,9 @@
           ],
           "ignoreclick": 1,
           "numinlets": 1,
-          "numoutlets": 0
+          "numoutlets": 0,
+          "varname": "obj-status",
+          "hidden": 0
         }
       },
       {
@@ -321,7 +323,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-chord-channel-label",
+          "hidden": 0
         }
       },
       {
@@ -429,7 +433,8 @@
             0.25,
             0.28,
             1.0
-          ]
+          ],
+          "hidden": 0
         }
       },
       {
@@ -477,7 +482,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-chord-hold-label",
+          "hidden": 0
         }
       },
       {
@@ -541,7 +548,8 @@
             0.28,
             1.0
           ],
-          "hint": "SysEx latches each chord update; Gate follows Note On/Off lengths."
+          "hint": "SysEx latches each chord update; Gate follows Note On/Off lengths.",
+          "hidden": 0
         }
       },
       {
@@ -605,7 +613,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-valid-source-label",
+          "hidden": 0
         }
       },
       {
@@ -669,7 +679,8 @@
             0.28,
             1.0
           ],
-          "hint": "Select the active valid-note collection. Both sources remain visible for comparison."
+          "hint": "Select the active valid-note collection. Both sources remain visible for comparison.",
+          "hidden": 0
         }
       },
       {
@@ -715,7 +726,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-valid-channel-label",
+          "hidden": 0
         }
       },
       {
@@ -824,7 +837,8 @@
             0.28,
             1.0
           ],
-          "hint": "Dedicated MIDI note-field input channel. Off retains the last complete field."
+          "hint": "Dedicated MIDI note-field input channel. Off retains the last complete field.",
+          "hidden": 0
         }
       },
       {
@@ -879,7 +893,9 @@
           ],
           "ignoreclick": 1,
           "numinlets": 1,
-          "numoutlets": 0
+          "numoutlets": 0,
+          "varname": "obj-derived-monitor",
+          "hidden": 0
         }
       },
       {
@@ -916,7 +932,9 @@
           ],
           "ignoreclick": 1,
           "numinlets": 1,
-          "numoutlets": 0
+          "numoutlets": 0,
+          "varname": "obj-midi-valid-monitor",
+          "hidden": 0
         }
       },
       {
@@ -954,7 +972,9 @@
           "ignoreclick": 1,
           "linecount": 2,
           "numinlets": 1,
-          "numoutlets": 0
+          "numoutlets": 0,
+          "varname": "obj-active-valid-monitor",
+          "hidden": 0
         }
       },
       {
@@ -968,6 +988,195 @@
             95.0,
             22.0
           ]
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-tab",
+          "maxclass": "textbutton",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            610,
+            7,
+            80,
+            23
+          ],
+          "varname": "monitor-play-tab",
+          "presentation": 1,
+          "presentation_rect": [
+            610,
+            7,
+            80,
+            23
+          ],
+          "text": "Play",
+          "texton": "Play",
+          "mode": 0,
+          "outlettype": [
+            "",
+            "int",
+            ""
+          ],
+          "rounded": 7,
+          "bgcolor": [
+            0.04,
+            0.48,
+            1,
+            1
+          ],
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "fontsize": 11
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-bang",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-play-bang",
+          "text": "t b"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-message",
+          "maxclass": "message",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-play-message",
+          "text": "page 0"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-tab",
+          "maxclass": "textbutton",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            695,
+            7,
+            80,
+            23
+          ],
+          "varname": "monitor-monitor-tab",
+          "presentation": 1,
+          "presentation_rect": [
+            695,
+            7,
+            80,
+            23
+          ],
+          "text": "Monitor",
+          "texton": "Monitor",
+          "mode": 0,
+          "outlettype": [
+            "",
+            "int",
+            ""
+          ],
+          "rounded": 7,
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1
+          ],
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "fontsize": 11
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-bang",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-monitor-bang",
+          "text": "t b"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-message",
+          "maxclass": "message",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-monitor-message",
+          "text": "page 1"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-detail",
+          "maxclass": "jsui",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            15,
+            40,
+            760,
+            98
+          ],
+          "varname": "monitor-detail",
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            40,
+            760,
+            98
+          ],
+          "jsarguments": [
+            "receiver",
+            "{\"play\": [\"obj-status\", \"obj-chord-channel-label\", \"chord_channel\", \"obj-chord-hold-label\", \"chord_hold\", \"obj-valid-source-label\", \"valid_note_source\", \"obj-valid-channel-label\", \"valid_note_channel\", \"obj-derived-monitor\", \"obj-midi-valid-monitor\", \"obj-active-valid-monitor\"], \"monitor\": [\"monitor-detail\"]}"
+          ],
+          "hidden": 1,
+          "filename": "harmonic_monitor.js",
+          "parameter_enable": 0,
+          "border": 0,
+          "bgcolor": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "ignoreclick": 1
         }
       }
     ],
@@ -1211,11 +1420,89 @@
             0
           ]
         }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-tab",
+            0
+          ],
+          "destination": [
+            "monitor-play-bang",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-bang",
+            0
+          ],
+          "destination": [
+            "monitor-play-message",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-message",
+            0
+          ],
+          "destination": [
+            "monitor-detail",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-tab",
+            0
+          ],
+          "destination": [
+            "monitor-monitor-bang",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-bang",
+            0
+          ],
+          "destination": [
+            "monitor-monitor-message",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-message",
+            0
+          ],
+          "destination": [
+            "monitor-detail",
+            0
+          ]
+        }
       }
     ],
     "dependency_cache": [
       {
         "name": "tetrachords_harmony_receiver.js",
+        "type": "TEXT",
+        "implicit": 1
+      },
+      {
+        "name": "harmonic_monitor.js",
+        "bootpath": ".",
         "type": "TEXT",
         "implicit": 1
       }

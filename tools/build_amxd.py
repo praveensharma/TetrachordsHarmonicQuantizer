@@ -31,6 +31,7 @@ MAX4LIVE_LIBRARY = USER_LIBRARY_ROOT / "Max4Live"
 MIDI_EFFECT_LIBRARY = (
     USER_LIBRARY_ROOT / "Presets/MIDI Effects/Max MIDI Effect/Imported"
 )
+MONITOR_SCRIPT = PROJECT_ROOT / 'Harmonic_Quantizer/harmonic_monitor.js'
 
 
 @dataclass(frozen=True)
@@ -239,6 +240,8 @@ def verify_installed(devices: Iterable[Device]) -> list[dict[str, object]]:
         _, source_json = read_maxpat(device.maxpat)
         locations = []
         for install_dir in device.install_dirs:
+            if (install_dir / MONITOR_SCRIPT.name).read_bytes() != MONITOR_SCRIPT.read_bytes():
+                raise ValueError(f'{device.name}: installed monitor script differs from source')
             installed = install_dir / device.filename
             installed_javascript = install_dir / device.javascript.name
             container = parse_container(installed.read_bytes(), installed)
@@ -305,6 +308,9 @@ def main() -> int:
             for device in DEVICES:
                 backups[device.name] = []
                 for install_dir in device.install_dirs:
+                    monitor = install_dir / MONITOR_SCRIPT.name
+                    if monitor.exists():
+                        backups[device.name].append(str(backup(monitor, stamp)))
                     installed_amxd = install_dir / device.filename
                     installed_javascript = install_dir / device.javascript.name
                     if installed_amxd.exists():
@@ -333,6 +339,8 @@ def main() -> int:
                         device.javascript.read_bytes(),
                     )
                 result["javascript"] = str(device.installed_javascript)
+                for install_dir in device.install_dirs:
+                    atomic_write(install_dir / MONITOR_SCRIPT.name, MONITOR_SCRIPT.read_bytes())
                 result["javascript_verified"] = (
                     device.installed_javascript.read_bytes()
                     == device.javascript.read_bytes()
@@ -343,6 +351,7 @@ def main() -> int:
                 result["backup"] = backups[result["name"]]
         else:
             args.dist.mkdir(parents=True, exist_ok=True)
+            atomic_write(args.dist / MONITOR_SCRIPT.name, MONITOR_SCRIPT.read_bytes())
             results = [
                 build_device(device, args.dist / device.filename)
                 for device in DEVICES

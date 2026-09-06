@@ -68,7 +68,7 @@
             520.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             290,
             10,
@@ -198,9 +198,9 @@
           "presentation": 1,
           "presentation_rect": [
             15,
-            121,
+            145,
             720,
-            20
+            19
           ],
           "text": "Waiting for Tetrachords harmony",
           "fontsize": 11.0,
@@ -217,7 +217,9 @@
             0.0,
             0.0
           ],
-          "ignoreclick": 1
+          "ignoreclick": 1,
+          "varname": "obj-status",
+          "hidden": 1
         }
       },
       {
@@ -463,7 +465,9 @@
             0.73,
             1.0
           ],
-          "hint": "Clear local voice memory; held-note releases remain intact."
+          "hint": "Clear local voice memory; held-note releases remain intact.",
+          "varname": "obj-reset-voices-button",
+          "hidden": 0
         }
       },
       {
@@ -493,7 +497,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-reset-voices-label",
+          "hidden": 0
         }
       },
       {
@@ -578,7 +584,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-mode-label",
+          "hidden": 0
         }
       },
       {
@@ -735,7 +743,8 @@
             0.25,
             0.28,
             1.0
-          ]
+          ],
+          "hidden": 0
         }
       },
       {
@@ -777,7 +786,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-harmonizer-label",
+          "hidden": 0
         }
       },
       {
@@ -840,7 +851,8 @@
             0.25,
             0.28,
             1.0
-          ]
+          ],
+          "hidden": 0
         }
       },
       {
@@ -882,7 +894,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-timing-label",
+          "hidden": 0
         }
       },
       {
@@ -948,7 +962,8 @@
             0.25,
             0.28,
             1.0
-          ]
+          ],
+          "hidden": 0
         }
       },
       {
@@ -990,7 +1005,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-gravity-label",
+          "hidden": 0
         }
       },
       {
@@ -1056,7 +1073,8 @@
             0.25,
             0.28,
             1.0
-          ]
+          ],
+          "hidden": 0
         }
       },
       {
@@ -1098,7 +1116,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-continuity-label",
+          "hidden": 0
         }
       },
       {
@@ -1155,7 +1175,8 @@
             0.28,
             1.0
           ],
-          "hint": "Stateful Nearest: 0% is nearest-note quantization; higher values favor continuity."
+          "hint": "Stateful Nearest: 0% is nearest-note quantization; higher values favor continuity.",
+          "hidden": 0
         }
       },
       {
@@ -1197,7 +1218,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-register-label",
+          "hidden": 0
         }
       },
       {
@@ -1261,7 +1284,8 @@
             0.28,
             1.0
           ],
-          "hint": "Free bypasses register boundaries. Limited uses the existing mode-specific Low/High behavior."
+          "hint": "Free bypasses register boundaries. Limited uses the existing mode-specific Low/High behavior.",
+          "hidden": 0
         }
       },
       {
@@ -1303,7 +1327,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-low-label",
+          "hidden": 0
         }
       },
       {
@@ -1359,7 +1385,8 @@
             0.25,
             0.28,
             1.0
-          ]
+          ],
+          "hidden": 0
         }
       },
       {
@@ -1401,7 +1428,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-high-label",
+          "hidden": 0
         }
       },
       {
@@ -1457,7 +1486,8 @@
             0.25,
             0.28,
             1.0
-          ]
+          ],
+          "hidden": 0
         }
       },
       {
@@ -1523,7 +1553,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-ensemble-label",
+          "hidden": 0
         }
       },
       {
@@ -1580,7 +1612,8 @@
             0.28,
             1.0
           ],
-          "hint": "0 = Off. Use the same group on coordinated parts. Enabled groups add a 4 ms collection window."
+          "hint": "0 = Off. Use the same group on coordinated parts. Enabled groups add a 4 ms collection window.",
+          "hidden": 0
         }
       },
       {
@@ -1628,7 +1661,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-ensemble-off-label",
+          "hidden": 0
         }
       },
       {
@@ -1658,7 +1693,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-part-label",
+          "hidden": 0
         }
       },
       {
@@ -1715,7 +1752,8 @@
             0.28,
             1.0
           ],
-          "hint": "Choose a unique Part 1–4 within the ensemble."
+          "hint": "Choose a unique Part 1–4 within the ensemble.",
+          "hidden": 0
         }
       },
       {
@@ -1763,7 +1801,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-separation-label",
+          "hidden": 0
         }
       },
       {
@@ -1820,7 +1860,8 @@
             0.28,
             1.0
           ],
-          "hint": "Soft preference against exact unisons. 0% preserves the independent quantizer result."
+          "hint": "Soft preference against exact unisons. 0% preserves the independent quantizer result.",
+          "hidden": 0
         }
       },
       {
@@ -1883,7 +1924,9 @@
             0.73,
             1.0
           ],
-          "hint": "Clear pitch memory for every part in this ensemble."
+          "hint": "Clear pitch memory for every part in this ensemble.",
+          "varname": "obj-reset-ensemble-button",
+          "hidden": 0
         }
       },
       {
@@ -1913,7 +1956,9 @@
             0.72,
             0.76,
             1.0
-          ]
+          ],
+          "varname": "obj-reset-ensemble-label",
+          "hidden": 0
         }
       },
       {
@@ -1949,7 +1994,7 @@
           "presentation": 1,
           "presentation_rect": [
             15,
-            145,
+            122,
             720,
             19
           ],
@@ -1967,6 +2012,233 @@
             0.0,
             0.0,
             0.0
+          ],
+          "ignoreclick": 1,
+          "varname": "obj-ensemble-monitor",
+          "hidden": 1
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-tab",
+          "maxclass": "textbutton",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            570,
+            7,
+            80,
+            23
+          ],
+          "varname": "monitor-play-tab",
+          "presentation": 1,
+          "presentation_rect": [
+            570,
+            7,
+            80,
+            23
+          ],
+          "text": "Play",
+          "texton": "Play",
+          "mode": 0,
+          "outlettype": [
+            "",
+            "int",
+            ""
+          ],
+          "rounded": 7,
+          "bgcolor": [
+            0.04,
+            0.48,
+            1,
+            1
+          ],
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "fontsize": 11
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-bang",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-play-bang",
+          "text": "t b"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-message",
+          "maxclass": "message",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-play-message",
+          "text": "page 0"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-tab",
+          "maxclass": "textbutton",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            655,
+            7,
+            80,
+            23
+          ],
+          "varname": "monitor-monitor-tab",
+          "presentation": 1,
+          "presentation_rect": [
+            655,
+            7,
+            80,
+            23
+          ],
+          "text": "Monitor",
+          "texton": "Monitor",
+          "mode": 0,
+          "outlettype": [
+            "",
+            "int",
+            ""
+          ],
+          "rounded": 7,
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1
+          ],
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "fontsize": 11
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-bang",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-monitor-bang",
+          "text": "t b"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-message",
+          "maxclass": "message",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-monitor-message",
+          "text": "page 1"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-compact",
+          "maxclass": "jsui",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            15,
+            121,
+            720,
+            43
+          ],
+          "varname": "monitor-compact",
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            121,
+            720,
+            43
+          ],
+          "jsarguments": [
+            "compact",
+            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"ensemble_group\", \"obj-ensemble-off-label\", \"obj-part-label\", \"ensemble_part\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
+          ],
+          "filename": "harmonic_monitor.js",
+          "parameter_enable": 0,
+          "border": 0,
+          "bgcolor": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "ignoreclick": 1
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-detail",
+          "maxclass": "jsui",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            15,
+            35,
+            720,
+            85
+          ],
+          "varname": "monitor-detail",
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            35,
+            720,
+            85
+          ],
+          "jsarguments": [
+            "detail",
+            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"ensemble_group\", \"obj-ensemble-off-label\", \"obj-part-label\", \"ensemble_part\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
+          ],
+          "hidden": 1,
+          "filename": "harmonic_monitor.js",
+          "parameter_enable": 0,
+          "border": 0,
+          "bgcolor": [
+            0,
+            0,
+            0,
+            0
           ],
           "ignoreclick": 1
         }
@@ -2620,6 +2892,78 @@
             0
           ]
         }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-tab",
+            0
+          ],
+          "destination": [
+            "monitor-play-bang",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-bang",
+            0
+          ],
+          "destination": [
+            "monitor-play-message",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-message",
+            0
+          ],
+          "destination": [
+            "monitor-compact",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-tab",
+            0
+          ],
+          "destination": [
+            "monitor-monitor-bang",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-bang",
+            0
+          ],
+          "destination": [
+            "monitor-monitor-message",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-message",
+            0
+          ],
+          "destination": [
+            "monitor-compact",
+            0
+          ]
+        }
       }
     ],
     "dependency_cache": [
@@ -2627,6 +2971,12 @@
         "name": "harmonic_quantizer.js",
         "bootpath": ".",
         "patcherrelativepath": ".",
+        "type": "TEXT",
+        "implicit": 1
+      },
+      {
+        "name": "harmonic_monitor.js",
+        "bootpath": ".",
         "type": "TEXT",
         "implicit": 1
       }

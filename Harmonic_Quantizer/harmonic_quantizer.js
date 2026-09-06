@@ -16,6 +16,26 @@ outlets = 3;
 
 var GLOBAL_NAME = "tetrachords_harmony_v1";
 var harmonyGlobal = new Global(GLOBAL_NAME);
+// Optional read-only UI taps: failures must never interrupt the MIDI path.
+function visual_message(selector, payload) {
+    try {
+        ['monitor-compact','monitor-detail'].forEach(function(name){
+            var display=this.patcher.getnamed(name);
+            if(display){display.message(selector,payload);}
+        },this);
+    } catch(e) {}
+}
+function visual_note(input,output,channel,reason) {
+    try {
+        ['monitor-compact','monitor-detail'].forEach(function(name){
+            var display=this.patcher.getnamed(name);
+            if(display){
+                display.message('active',JSON.stringify({pcs:legalPitchClasses,source:source_description()}));
+                display.message('event',input,output,channel,reason||'');
+            }
+        },this);
+    } catch(e) {}
+}
 var NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 var legalPitchClasses = [];
@@ -751,6 +771,7 @@ function activate_harmony(version, root, pcs, source) {
     activeValidSource = source || "sysex";
     legalPitchClasses = pcs.slice(0);
     pendingHarmony = null;
+    visual_message('active',JSON.stringify({pcs:legalPitchClasses,source:source_description()}));
     runtime_trace(
         "ACTIVE\t" + version + "/" + activeValidSource +
         "\troot=" + harmonyRoot + " pcs=" + legalPitchClasses.join(",")
@@ -1093,6 +1114,7 @@ function process_channel_message(statusByte, data1, data2) {
         legalPitchClasses.length === 0
     ) {
         send_channel_message(statusByte, data1, data2);
+        if(type===0x90 && data2>0){visual_note(data1,data1,channel,!enabled?'Bypassed':'No valid set — passthrough');}
         return;
     }
 
@@ -1164,6 +1186,7 @@ function deliver_note_on(channel, inputNote, velocity, outputNote, remember) {
         );
     }
     send_midi3(0x90 | ((channel - 1) & 0x0F), outputNote, velocity);
+    visual_note(inputNote,outputNote,channel);
 }
 
 function copy_voice_state(state) {

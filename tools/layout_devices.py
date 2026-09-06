@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from monitor_layout import add_monitor
 
 ROOT = Path(__file__).resolve().parent.parent
 BG = [0.12, 0.14, 0.16, 1.0]
@@ -113,6 +114,7 @@ def update(relative, positions, width, receiver=False):
             line = entry['patchline']
             if line['destination'][0] == 'obj-status':
                 line['destination'][1] = 0
+    add_monitor(patch, receiver)
     path.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + '\n')
 
 if __name__ == '__main__':

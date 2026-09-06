@@ -30,7 +30,7 @@
     "imprint": 0,
     "enablehscroll": 1,
     "enablevscroll": 1,
-    "devicewidth": 910,
+    "devicewidth": 790,
     "description": "Receives Tetrachords SysEx, active chord notes and an optional authoritative MIDI note field.",
     "digest": "Tetrachords harmonic-state receiver for the companion Harmonic Quantizer.",
     "tags": "MIDI Tetrachords harmony quantizer",
@@ -68,7 +68,7 @@
         "box": {
           "id": "obj-subtitle",
           "maxclass": "comment",
-          "text": "HARMONIC INPUT  /  Compare SysEx intervals with incoming MIDI notes",
+          "text": "HARMONIC INPUT  /  SysEx and MIDI note comparison",
           "patching_rect": [
             20.0,
             42.0,
@@ -77,9 +77,9 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            345,
+            335,
             10,
-            550,
+            440,
             18
           ],
           "fontsize": 10.0,
@@ -162,7 +162,7 @@
           "presentation_rect": [
             15,
             140,
-            880,
+            760,
             23
           ],
           "fontsize": 11.0,
@@ -860,7 +860,7 @@
           "presentation_rect": [
             335,
             40,
-            560,
+            440,
             23
           ],
           "fontsize": 11.0,
@@ -897,7 +897,7 @@
           "presentation_rect": [
             335,
             69,
-            560,
+            440,
             23
           ],
           "fontsize": 11.0,
@@ -934,7 +934,7 @@
           "presentation_rect": [
             335,
             98,
-            560,
+            440,
             34
           ],
           "fontsize": 11.0,

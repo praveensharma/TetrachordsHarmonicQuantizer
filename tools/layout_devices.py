@@ -46,7 +46,7 @@ QUANTIZER = {
 }
 RECEIVER = {
     'obj-title': [15, 7, 310, 24],
-    'obj-subtitle': [345, 10, 550, 18],
+    'obj-subtitle': [335, 10, 440, 18],
     'obj-valid-source-label': [15, 43, 80, 18],
     'obj-valid-source-menu': [100, 40, 210, 23],
     'obj-valid-channel-label': [15, 73, 80, 18],
@@ -55,10 +55,10 @@ RECEIVER = {
     'obj-chord-channel-menu': [100, 100, 70, 23],
     'obj-chord-hold-label': [185, 103, 65, 18],
     'obj-chord-hold-menu': [250, 100, 65, 23],
-    'obj-derived-monitor': [335, 40, 560, 23],
-    'obj-midi-valid-monitor': [335, 69, 560, 23],
-    'obj-active-valid-monitor': [335, 98, 560, 34],
-    'obj-status': [15, 140, 880, 23],
+    'obj-derived-monitor': [335, 40, 440, 23],
+    'obj-midi-valid-monitor': [335, 69, 440, 23],
+    'obj-active-valid-monitor': [335, 98, 440, 34],
+    'obj-status': [15, 140, 760, 23],
 }
 
 def update(relative, positions, width, receiver=False):
@@ -90,7 +90,7 @@ def update(relative, positions, width, receiver=False):
     boxes['obj-title'].update(fontsize=16.0, fontface=1, textcolor=TEXT)
     boxes['obj-subtitle'].update(fontsize=10.0)
     if receiver:
-        boxes['obj-subtitle']['text'] = 'HARMONIC INPUT  /  Compare SysEx intervals with incoming MIDI notes'
+        boxes['obj-subtitle']['text'] = 'HARMONIC INPUT  /  SysEx and MIDI note comparison'
         boxes['obj-chord-hold-label']['text'] = 'Hold'
         boxes['obj-valid-channel-label']['text'] = 'MIDI field ch'
         boxes['obj-active-valid-monitor'].update(linecount=2, textcolor=ACCENT)
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     parser.add_argument('--check', action='store_true', help='Validate installed-source presentation bounds without editing')
     args = parser.parse_args()
     files = [('Harmonic_Quantizer/Harmonic Quantizer.maxpat', QUANTIZER, 750, False),
-             ('Tetrachords_Harmony_Receiver/Tetrachords Harmony Receiver.maxpat', RECEIVER, 910, True)]
+             ('Tetrachords_Harmony_Receiver/Tetrachords Harmony Receiver.maxpat', RECEIVER, 790, True)]
     for relative, positions, width, receiver in files:
         if not args.check:
             update(relative, positions, width, receiver)

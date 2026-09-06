@@ -74,14 +74,18 @@ def update(relative, positions, width, receiver=False):
         box = boxes[id]
         box.update(presentation=1, presentation_rect=rect, fontsize=11.0,
                    fontname='Arial', textcolor=TEXT)
-        if box['maxclass'] == 'comment':
+        if box['maxclass'] == 'comment' and id != 'obj-status' and 'monitor' not in id:
             box['textcolor'] = MUTED
         elif box['maxclass'] in ('message', 'number', 'umenu'):
             box.update(bgcolor=FIELD)
         elif box['maxclass'] == 'button':
             box.update(bgcolor=FIELD, color=ACCENT)
         if box['maxclass'] == 'message':
-            box['ignoreclick'] = 1
+            # Readouts are text labels, not Max message buttons. This avoids
+            # the host's message-box gradient and quoted-symbol decoration.
+            box.update(maxclass='comment', numinlets=1, numoutlets=0,
+                       bgcolor=[0.0, 0.0, 0.0, 0.0], ignoreclick=1)
+            box.pop('outlettype', None)
             box['text'] = box.get('text', '').removeprefix('set ').strip('"')
     boxes['obj-title'].update(fontsize=16.0, fontface=1, textcolor=TEXT)
     boxes['obj-subtitle'].update(fontsize=10.0)

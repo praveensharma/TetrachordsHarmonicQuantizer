@@ -150,7 +150,7 @@
       {
         "box": {
           "id": "obj-status",
-          "maxclass": "message",
+          "maxclass": "comment",
           "text": "Waiting for Live initialization",
           "patching_rect": [
             105.0,
@@ -174,12 +174,14 @@
             1.0
           ],
           "bgcolor": [
-            0.22,
-            0.25,
-            0.28,
-            1.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ],
-          "ignoreclick": 1
+          "ignoreclick": 1,
+          "numinlets": 1,
+          "numoutlets": 0
         }
       },
       {
@@ -846,7 +848,7 @@
       {
         "box": {
           "id": "obj-derived-monitor",
-          "maxclass": "message",
+          "maxclass": "comment",
           "text": "SysEx Intervals: waiting",
           "patching_rect": [
             20.0,
@@ -870,18 +872,20 @@
             1.0
           ],
           "bgcolor": [
-            0.22,
-            0.25,
-            0.28,
-            1.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ],
-          "ignoreclick": 1
+          "ignoreclick": 1,
+          "numinlets": 1,
+          "numoutlets": 0
         }
       },
       {
         "box": {
           "id": "obj-midi-valid-monitor",
-          "maxclass": "message",
+          "maxclass": "comment",
           "text": "MIDI Note Field: Off",
           "patching_rect": [
             20.0,
@@ -905,18 +909,20 @@
             1.0
           ],
           "bgcolor": [
-            0.22,
-            0.25,
-            0.28,
-            1.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ],
-          "ignoreclick": 1
+          "ignoreclick": 1,
+          "numinlets": 1,
+          "numoutlets": 0
         }
       },
       {
         "box": {
           "id": "obj-active-valid-monitor",
-          "maxclass": "message",
+          "maxclass": "comment",
           "text": "Active: SysEx Intervals • no complete set",
           "patching_rect": [
             20.0,
@@ -940,13 +946,15 @@
             1.0
           ],
           "bgcolor": [
-            0.22,
-            0.25,
-            0.28,
-            1.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ],
           "ignoreclick": 1,
-          "linecount": 2
+          "linecount": 2,
+          "numinlets": 1,
+          "numoutlets": 0
         }
       },
       {

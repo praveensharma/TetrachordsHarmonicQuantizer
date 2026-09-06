@@ -186,12 +186,9 @@
       {
         "box": {
           "id": "obj-status",
-          "maxclass": "message",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
           "patching_rect": [
             85.0,
             173.0,
@@ -215,10 +212,10 @@
             1.0
           ],
           "bgcolor": [
-            0.22,
-            0.25,
-            0.28,
-            1.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ],
           "ignoreclick": 1
         }
@@ -1940,12 +1937,9 @@
       {
         "box": {
           "id": "obj-ensemble-monitor",
-          "maxclass": "message",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
           "patching_rect": [
             15,
             196,
@@ -1969,10 +1963,10 @@
             1.0
           ],
           "bgcolor": [
-            0.22,
-            0.25,
-            0.28,
-            1.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ],
           "ignoreclick": 1
         }

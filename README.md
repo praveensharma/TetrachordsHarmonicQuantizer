@@ -203,6 +203,59 @@ an older Ableton Set. The menu is ordered and labeled as:
 7. `scale-down`
 8. `scale-map`
 
+### Ensemble Coordination
+
+Use one quantizer instance per melodic part. Set **Ensemble** to the same
+number (1–8) on the four tracks and assign unique **Part** numbers 1–4. These
+identities are independent of MIDI channels; Ableton still controls routing.
+Ensemble 0 is Off and retains the original processing without buffering.
+Group, Part and **Separation** are saved Live parameters. Defaults are Off,
+Part 1 and Separation 0% so existing tracks opt in explicitly.
+
+Each part publishes its last assigned MIDI pitch, including after Note Off.
+This supports CV pitches articulated by separate hardware triggers: the
+monitor displays assigned pitches, not which sounds are currently audible.
+The four-part monitor shows note names and MIDI numbers, flags exact unisons,
+and reports CONFLICT when two devices claim the same Part. Conflicting parts
+keep their normal quantized pitches rather than applying separation.
+
+Separation is a soft preference against exact pitch duplication. At 0%, the
+original quantizer pitch is retained; increasing it favors a nearby allowed
+alternative within six semitones of that pitch. Octave doubling is allowed.
+Chord modes choose chord tones; other modes use the active valid collection.
+Register boundaries and directional constraints restrict alternatives. The
+final separated pitch is the one remembered by Stateful Nearest and paired
+with its Note Off. Continuity remains independent on every instance.
+
+Ensemble-enabled instances collect requests for approximately **4 ms** and
+resolve each batch in **Part 1 → Part 4** order. Participating parts replace
+their old pitch assignments together; idle parts keep theirs. Notes arriving
+in the same batch therefore give the same choices regardless of track arrival
+order, provided the harmony, settings and prior state match. Notes outside
+that window form subsequent batches. Very dense notes within one part use
+the pre-delivery quantizer memory; this is intended for four melodic lanes,
+not polyphonic voice allocation within one lane.
+
+Note Ons and Note Offs receive the same nominal delay to preserve short gates.
+Max scheduler load can add timing jitter; actual Ableton/hardware latency
+still needs a listening test. MIDI clock is not buffered. Independently
+routed external triggers are not delayed: allow CV to settle before triggering
+the envelope. Ensemble Off is available when that timing cannot be accommodated.
+
+**Reset Ensemble** clears all four parts' pitch/continuity memories together,
+without releasing held notes or losing their release mappings. Use it before
+restarting the same phrase for a controlled A/B. This release has a manual
+reset; automatic host-synchronized phrase resets are deferred until the studio
+test. Reset Voices remains local. Deleted devices release their membership;
+stale members expire after two seconds without a heartbeat. Do not reuse an
+ensemble group in two open Sets that should be independent.
+
+First studio test: four KeyStep Pro lanes, Ensemble 1, Parts 1–4,
+Stateful Nearest, Continuity 60%, Register Free (or each part's chosen Limited
+range). Start with Separation 0%, then try 50%. Reset Ensemble and restart the
+source phrase at each A/B endpoint. The same repeating inputs and harmony are
+needed to assess reproducibility; live gestures are naturally different.
+
 ### Stateful Nearest mode
 
 **stateful-nearest** remembers the final MIDI pitch actually transmitted for
@@ -305,6 +358,7 @@ If Node.js is installed, run these from the package root:
 ```text
 node tests/test_quantizer_logic.js
 node tests/test_max_js_engines.js
+node tests/test_ensemble.js
 ```
 
 The second test mocks the Max JavaScript environment and verifies Tetrachords

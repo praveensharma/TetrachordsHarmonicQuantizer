@@ -112,8 +112,9 @@
           "id": "obj-js",
           "maxclass": "newobj",
           "numinlets": 2,
-          "numoutlets": 2,
+          "numoutlets": 3,
           "outlettype": [
+            "",
             "",
             ""
           ],
@@ -262,10 +263,10 @@
           "presentation_rect": [
             15.0,
             228.0,
-            260.0,
+            710,
             20.0
           ],
-          "text": "All incoming MIDI channels are quantized."
+          "text": "One device per part. MIDI channels are preserved."
         }
       },
       {
@@ -492,11 +493,12 @@
           "presentation": 1,
           "presentation_rect": [
             15.0,
-            260.0,
-            700.0,
-            20.0
+            252,
+            710,
+            36
           ],
-          "text": "Chord Nearest preserves melody. Chord/Scale Map deliberately transform the incoming pattern."
+          "text": "Ensemble: assigned pitches persist after Note Off. 4 ms collection; P1–P4 priority. Reset clears pitch memory.",
+          "linecount": 2
         }
       },
       {
@@ -1259,6 +1261,363 @@
           ],
           "text": "24, 24, 48"
         }
+      },
+      {
+        "box": {
+          "id": "obj-ensemble-label",
+          "maxclass": "comment",
+          "text": "Ensemble",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            15,
+            165,
+            65,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            165,
+            65,
+            20
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-ensemble-number",
+          "maxclass": "number",
+          "maximum": 8,
+          "minimum": 0,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            "bang"
+          ],
+          "patching_rect": [
+            85,
+            163,
+            45,
+            22
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            85,
+            163,
+            45,
+            22
+          ],
+          "parameter_enable": 1,
+          "varname": "ensemble_group",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Ensemble Group",
+              "parameter_shortname": "Ensemble Group",
+              "parameter_type": 3,
+              "parameter_mmin": 0,
+              "parameter_mmax": 8,
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                0
+              ]
+            }
+          }
+        }
+      },
+      {
+        "box": {
+          "id": "obj-ensemble-number-prepend",
+          "maxclass": "newobj",
+          "text": "prepend ensemble",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            20,
+            773,
+            140,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-ensemble-off-label",
+          "maxclass": "comment",
+          "text": "0 = Off",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            135,
+            165,
+            55,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            135,
+            165,
+            55,
+            20
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-part-label",
+          "maxclass": "comment",
+          "text": "Part",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            205,
+            165,
+            35,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            205,
+            165,
+            35,
+            20
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-part-number",
+          "maxclass": "number",
+          "maximum": 4,
+          "minimum": 1,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            "bang"
+          ],
+          "patching_rect": [
+            245,
+            163,
+            45,
+            22
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            245,
+            163,
+            45,
+            22
+          ],
+          "parameter_enable": 1,
+          "varname": "ensemble_part",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Ensemble Part",
+              "parameter_shortname": "Ensemble Part",
+              "parameter_type": 3,
+              "parameter_mmin": 1,
+              "parameter_mmax": 4,
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                1
+              ]
+            }
+          }
+        }
+      },
+      {
+        "box": {
+          "id": "obj-part-number-prepend",
+          "maxclass": "newobj",
+          "text": "prepend part",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            20,
+            777,
+            140,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-separation-label",
+          "maxclass": "comment",
+          "text": "Separation %",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            310,
+            165,
+            95,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            310,
+            165,
+            95,
+            20
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-separation-number",
+          "maxclass": "number",
+          "maximum": 100,
+          "minimum": 0,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            "bang"
+          ],
+          "patching_rect": [
+            405,
+            163,
+            55,
+            22
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            405,
+            163,
+            55,
+            22
+          ],
+          "parameter_enable": 1,
+          "varname": "ensemble_separation",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Ensemble Separation",
+              "parameter_shortname": "Ensemble Separation",
+              "parameter_type": 3,
+              "parameter_mmin": 0,
+              "parameter_mmax": 100,
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                0
+              ]
+            }
+          }
+        }
+      },
+      {
+        "box": {
+          "id": "obj-separation-number-prepend",
+          "maxclass": "newobj",
+          "text": "prepend separation",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            20,
+            780,
+            140,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-reset-ensemble-button",
+          "maxclass": "button",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            "bang"
+          ],
+          "patching_rect": [
+            505,
+            164,
+            20,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            505,
+            164,
+            20,
+            20
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-reset-ensemble-label",
+          "maxclass": "comment",
+          "text": "Reset Ensemble",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            530,
+            165,
+            130,
+            20
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            530,
+            165,
+            130,
+            20
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-reset-ensemble-message",
+          "maxclass": "message",
+          "text": "resetensemble",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            500,
+            700,
+            100,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-ensemble-monitor",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            15,
+            196,
+            710,
+            22
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            196,
+            710,
+            22
+          ],
+          "text": "set \"Ensemble Off — independent quantization\""
+        }
       }
     ],
     "lines": [
@@ -1762,6 +2121,150 @@
           ],
           "source": [
             "obj-thisdevice",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-ensemble-number",
+            0
+          ],
+          "destination": [
+            "obj-ensemble-number-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-ensemble-number-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-thisdevice",
+            0
+          ],
+          "destination": [
+            "obj-ensemble-number",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-part-number",
+            0
+          ],
+          "destination": [
+            "obj-part-number-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-part-number-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-thisdevice",
+            0
+          ],
+          "destination": [
+            "obj-part-number",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-separation-number",
+            0
+          ],
+          "destination": [
+            "obj-separation-number-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-separation-number-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-thisdevice",
+            0
+          ],
+          "destination": [
+            "obj-separation-number",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-reset-ensemble-button",
+            0
+          ],
+          "destination": [
+            "obj-reset-ensemble-message",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-reset-ensemble-message",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-js",
+            2
+          ],
+          "destination": [
+            "obj-ensemble-monitor",
             0
           ]
         }

@@ -22,6 +22,7 @@ function studio() {
     }
     function device(part, group=1, separation=100, controls={}) {
         const midi = [];
+        const selectors = {};
         function Global(name) { return globals[name] || (globals[name]={}); }
         function Task(fn, owner) { this.fn=fn; this.owner=owner; }
         Task.prototype.schedule=function(ms) { this.due=now+ms; timers.add(this); };
@@ -31,13 +32,16 @@ function studio() {
         const c = vm.createContext({Global, Task, Math, Date:class extends Date { constructor() { super(now); } },
             outlet(index,...bytes) { if(index===0) midi.push({time:now,byte:bytes[0]}); },
             arrayfromargs(args) { return Array.from(args); }, messnamed() {},
-            patcher:{getnamed(name) { return name in values ? {getvalueof() { return values[name]; }} : null; }}
+            patcher:{getnamed(name) {
+                if(name==='ensemble_group_selector'||name==='ensemble_part_selector')return {message(cmd,v){assert.equal(cmd,'set');selectors[name]=v;}};
+                return name in values ? {getvalueof() { return values[name]; }} : null;
+            }}
         });
         vm.runInContext(source,c);
         c.init(); c.mode("nearest"); c.registermode("free"); c.timing("immediate");
         c.apply_valid_notes([1,0,"midi",0,2,4,5,7,9,11]);
         c.ensemble_refresh();
-        return {c,midi,notes:()=>midi.filter((_,i)=>i%3===1).map(x=>x.byte)};
+        return {c,midi,selectors,notes:()=>midi.filter((_,i)=>i%3===1).map(x=>x.byte)};
     }
     return {device,advance,globals};
 }
@@ -49,7 +53,9 @@ function simultaneous(order) {
     const notes=parts.map(p=>p.notes()[0]);
     assert.equal(new Set(notes).size,4);
     parts.forEach(p=>assert.equal(p.midi[0].byte,0x98));
-    assert.ok(parts[0].c.ensembleMonitorText.includes("P4:"));
+    assert.ok(parts[0].c.ensembleMonitorText.includes("Voice D:"));
+    assert.equal(parts[3].selectors.ensemble_part_selector,3);
+    assert.equal(parts[3].selectors.ensemble_group_selector,1);
     return notes;
 }
 assert.deepStrictEqual(simultaneous([0,1,2,3]),simultaneous([3,2,1,0]));

@@ -142,8 +142,15 @@ function ensemble_group(state) {
 }
 
 function ensemble_refresh() {
+    // Display indices are separate from persisted group/part numeric values.
+    try {
+        var groupMenu=this.patcher.getnamed('ensemble_group_selector');
+        var voiceMenu=this.patcher.getnamed('ensemble_part_selector');
+        if(groupMenu){groupMenu.message('set',ensembleGroup);}
+        if(voiceMenu){voiceMenu.message('set',ensemblePart-1);}
+    } catch(e) {}
     if (!ensembleGroup) {
-        ensemble_monitor("Ensemble Off — independent quantization");
+        ensemble_monitor("Independent — no ensemble coordination");
         return;
     }
     var state = ensemble_read();
@@ -177,12 +184,12 @@ function ensemble_refresh() {
     var notes = [];
     for (var i = 0; i < 4; i++) {
         var note = parts[i].length === 1 ? parts[i][0] : null;
-        labels.push("P" + (i + 1) + ": " + (parts[i].length > 1 ? "CONFLICT" :
+        labels.push("Voice " + "ABCD".charAt(i) + ": " + (parts[i].length > 1 ? "CONFLICT" :
             note === null ? "—" : midi_note_name(note) + " (" + note + ")"));
         if (note !== null) { notes.push(note); }
     }
     var duplicate = notes.some(function (note, index) { return notes.indexOf(note) !== index; });
-    ensemble_monitor("Group " + ensembleGroup + " | " + labels.join("  ") +
+    ensemble_monitor("Ensemble " + "ABCDEFGH".charAt(ensembleGroup-1) + " | " + labels.join("  ") +
         (duplicate ? " | UNISON" : "") + " | assigned pitches");
 }
 

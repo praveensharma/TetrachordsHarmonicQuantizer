@@ -35,13 +35,12 @@ QUANTIZER = {
     'obj-high-number': [670, 64, 48, 23],
     'obj-ensemble-label': [15, 96, 65, 18],
     'obj-ensemble-number': [85, 93, 50, 23],
-    'obj-ensemble-off-label': [140, 96, 55, 18],
-    'obj-part-label': [205, 96, 35, 18],
+    'obj-part-label': [245, 96, 40, 18],
     'obj-part-number': [245, 93, 45, 23],
-    'obj-separation-label': [315, 96, 95, 18],
-    'obj-separation-number': [410, 93, 50, 23],
-    'obj-reset-ensemble-button': [505, 96, 17, 17],
-    'obj-reset-ensemble-label': [535, 96, 135, 18],
+    'obj-separation-label': [405, 96, 100, 18],
+    'obj-separation-number': [510, 93, 50, 23],
+    'obj-reset-ensemble-button': [590, 96, 17, 17],
+    'obj-reset-ensemble-label': [615, 96, 125, 18],
     'obj-status': [15, 121, 720, 20],
     'obj-ensemble-monitor': [15, 145, 720, 19],
 }
@@ -99,13 +98,15 @@ def update(relative, positions, width, receiver=False):
         boxes['obj-valid-channel-menu']['hint'] = 'Dedicated MIDI note-field input channel. Off retains the last complete field.'
         boxes['obj-chord-hold-menu']['hint'] = 'SysEx latches each chord update; Gate follows Note On/Off lengths.'
     else:
+        boxes['obj-part-label']['text'] = 'Voice'
+        boxes['obj-separation-label']['text'] = 'Avoid Unison %'
         boxes['obj-subtitle']['text'] = 'PITCH  /  REGISTER  /  ENSEMBLE'
         boxes['obj-ensemble-monitor']['textcolor'] = ACCENT
         boxes['obj-continuity-number']['hint'] = 'Stateful Nearest: 0% is nearest-note quantization; higher values favor continuity.'
         boxes['obj-register-mode-menu']['hint'] = 'Free bypasses register boundaries. Limited uses the existing mode-specific Low/High behavior.'
         boxes['obj-ensemble-number']['hint'] = '0 = Off. Use the same group on coordinated parts. Enabled groups add a 4 ms collection window.'
         boxes['obj-part-number']['hint'] = 'Choose a unique Part 1–4 within the ensemble.'
-        boxes['obj-separation-number']['hint'] = 'Soft preference against exact unisons. 0% preserves the independent quantizer result.'
+        boxes['obj-separation-number']['hint'] = 'Preference strength, not probability: avoid other ensemble voices’ last assigned exact MIDI pitches. 0% leaves the mode result unchanged; 100% is strongest, not a guarantee. Octave doubles remain allowed. Ensemble must be enabled.'
         boxes['obj-reset-voices-button']['hint'] = 'Clear local voice memory; held-note releases remain intact.'
         boxes['obj-reset-ensemble-button']['hint'] = 'Clear pitch memory for every part in this ensemble.'
         # The engine already emits `set text`. Sending it to inlet 1 displayed
@@ -114,8 +115,35 @@ def update(relative, positions, width, receiver=False):
             line = entry['patchline']
             if line['destination'][0] == 'obj-status':
                 line['destination'][1] = 0
+    if not receiver:
+        ensemble_selectors(patch)
     add_monitor(patch, receiver)
     path.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + '\n')
+
+def ensemble_selectors(patch):
+    # Keep original saved numeric parameters intact; visible menus are proxies.
+    patch['boxes']=[e for e in patch['boxes'] if not e['box']['id'].startswith('ensemble-ui-')]
+    patch['lines']=[e for e in patch['lines'] if not any(e['patchline'][k][0].startswith('ensemble-ui-') for k in ('source','destination'))]
+    boxes={e['box']['id']:e['box'] for e in patch['boxes']}
+    for kind,target,rect,labels,offset,hint in [
+        ('group','obj-ensemble-number',[85,93,150,23],['Independent']+['Ensemble '+c for c in 'ABCDEFGH'],0,
+         'Choose the same ensemble on devices that should coordinate. Independent disables coordination. Enabled ensembles collect notes for 4 ms.'),
+        ('part','obj-part-number',[290,93,100,23],['Voice '+c for c in 'ABCD'],1,
+         'Choose a different voice for each device in the ensemble. These are identities, not MIDI channels or bass/treble roles.')]:
+        boxes[target]['presentation']=0
+        id='ensemble-ui-'+kind
+        items=[]
+        for i,label in enumerate(labels):
+            if i:items.append(',')
+            items.append(label)
+        patch['boxes'].append({'box':dict(id=id,maxclass='umenu',varname='ensemble_'+kind+'_selector',
+            numinlets=1,numoutlets=3,outlettype=['int','',''],items=items,parameter_enable=0,
+            presentation=1,presentation_rect=rect,patching_rect=rect,fontsize=11,fontname='Arial',
+            bgcolor=FIELD,textcolor=TEXT,hint=hint)})
+        patch['boxes'].append({'box':dict(id=id+'-offset',maxclass='newobj',text='+ '+str(offset),
+            numinlets=2,numoutlets=1,outlettype=['int'],patching_rect=[20,1900+(offset*30),80,22])})
+        for source,destination in [(id,id+'-offset'),(id+'-offset',target)]:
+            patch['lines'].append({'patchline':{'source':[source,0],'destination':[destination,0]}})
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

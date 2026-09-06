@@ -1576,7 +1576,7 @@
             45,
             22
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             85,
             93,
@@ -1647,7 +1647,7 @@
             55,
             20
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             140,
             96,
@@ -1670,7 +1670,7 @@
         "box": {
           "id": "obj-part-label",
           "maxclass": "comment",
-          "text": "Part",
+          "text": "Voice",
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
@@ -1681,9 +1681,9 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            205,
+            245,
             96,
-            35,
+            40,
             18
           ],
           "fontsize": 11.0,
@@ -1716,7 +1716,7 @@
             45,
             22
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             245,
             93,
@@ -1778,7 +1778,7 @@
         "box": {
           "id": "obj-separation-label",
           "maxclass": "comment",
-          "text": "Separation %",
+          "text": "Avoid Unison %",
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
@@ -1789,9 +1789,9 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            315,
+            405,
             96,
-            95,
+            100,
             18
           ],
           "fontsize": 11.0,
@@ -1826,7 +1826,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            410,
+            510,
             93,
             50,
             23
@@ -1860,7 +1860,7 @@
             0.28,
             1.0
           ],
-          "hint": "Soft preference against exact unisons. 0% preserves the independent quantizer result.",
+          "hint": "Preference strength, not probability: avoid other ensemble voices’ last assigned exact MIDI pitches. 0% leaves the mode result unchanged; 100% is strongest, not a guarantee. Octave doubles remain allowed. Ensemble must be enabled.",
           "hidden": 0
         }
       },
@@ -1899,7 +1899,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            505,
+            590,
             96,
             17,
             17
@@ -1944,9 +1944,9 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            535,
+            615,
             96,
-            135,
+            125,
             18
           ],
           "fontsize": 11.0,
@@ -2016,6 +2016,158 @@
           "ignoreclick": 1,
           "varname": "obj-ensemble-monitor",
           "hidden": 1
+        }
+      },
+      {
+        "box": {
+          "id": "ensemble-ui-group",
+          "maxclass": "umenu",
+          "varname": "ensemble_group_selector",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "items": [
+            "Independent",
+            ",",
+            "Ensemble A",
+            ",",
+            "Ensemble B",
+            ",",
+            "Ensemble C",
+            ",",
+            "Ensemble D",
+            ",",
+            "Ensemble E",
+            ",",
+            "Ensemble F",
+            ",",
+            "Ensemble G",
+            ",",
+            "Ensemble H"
+          ],
+          "parameter_enable": 0,
+          "presentation": 1,
+          "presentation_rect": [
+            85,
+            93,
+            150,
+            23
+          ],
+          "patching_rect": [
+            85,
+            93,
+            150,
+            23
+          ],
+          "fontsize": 11,
+          "fontname": "Arial",
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "hint": "Choose the same ensemble on devices that should coordinate. Independent disables coordination. Enabled ensembles collect notes for 4 ms.",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "ensemble-ui-group-offset",
+          "maxclass": "newobj",
+          "text": "+ 0",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "int"
+          ],
+          "patching_rect": [
+            20,
+            1900,
+            80,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "ensemble-ui-part",
+          "maxclass": "umenu",
+          "varname": "ensemble_part_selector",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "items": [
+            "Voice A",
+            ",",
+            "Voice B",
+            ",",
+            "Voice C",
+            ",",
+            "Voice D"
+          ],
+          "parameter_enable": 0,
+          "presentation": 1,
+          "presentation_rect": [
+            290,
+            93,
+            100,
+            23
+          ],
+          "patching_rect": [
+            290,
+            93,
+            100,
+            23
+          ],
+          "fontsize": 11,
+          "fontname": "Arial",
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "hint": "Choose a different voice for each device in the ensemble. These are identities, not MIDI channels or bass/treble roles.",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "ensemble-ui-part-offset",
+          "maxclass": "newobj",
+          "text": "+ 1",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "int"
+          ],
+          "patching_rect": [
+            20,
+            1930,
+            80,
+            22
+          ]
         }
       },
       {
@@ -2192,7 +2344,7 @@
           ],
           "jsarguments": [
             "compact",
-            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"ensemble_group\", \"obj-ensemble-off-label\", \"obj-part-label\", \"ensemble_part\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
+            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
           ],
           "filename": "harmonic_monitor.js",
           "parameter_enable": 0,
@@ -2228,7 +2380,7 @@
           ],
           "jsarguments": [
             "detail",
-            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"ensemble_group\", \"obj-ensemble-off-label\", \"obj-part-label\", \"ensemble_part\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
+            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
           ],
           "hidden": 1,
           "filename": "harmonic_monitor.js",
@@ -2889,6 +3041,54 @@
           ],
           "destination": [
             "obj-ensemble-monitor",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "ensemble-ui-group",
+            0
+          ],
+          "destination": [
+            "ensemble-ui-group-offset",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "ensemble-ui-group-offset",
+            0
+          ],
+          "destination": [
+            "obj-ensemble-number",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "ensemble-ui-part",
+            0
+          ],
+          "destination": [
+            "ensemble-ui-part-offset",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "ensemble-ui-part-offset",
+            0
+          ],
+          "destination": [
+            "obj-part-number",
             0
           ]
         }

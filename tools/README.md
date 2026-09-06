@@ -32,6 +32,23 @@ python3 tools/build_amxd.py --verify-installed
 The script never launches Max or Ableton.
 # Read-only performance monitors
 
+## Ensemble controls
+
+The Play page uses **Independent / Ensemble A–H** and **Voice A–D** menus.
+Devices coordinate only within the same ensemble; give each device a distinct
+voice. Voice labels are identities, not MIDI channels or fixed bass/treble roles.
+The menus drive the original persisted numeric parameters, preserving saved
+group and part assignments and automation. A = former 1, B = 2, and so on.
+
+**Avoid Unison %** is the former Separation control, with unchanged behavior:
+0% preserves each quantizer's normal pitch choice; higher values penalize choosing
+another member's last assigned exact MIDI pitch. 100% is the strongest preference,
+not guaranteed uniqueness or a probability. Alternatives remain valid notes within
+six semitones of the original result and respect existing mode/register rules.
+Octave doubles are allowed. Comparison uses last assigned notes, not a held-note
+gate detector. Independent disables this coordination; enabled ensembles retain
+the existing 4 ms collection window even with Avoid Unison at zero.
+
 The existing device filenames and User Library paths remain unchanged. Building
 with `--install` installs and verifies `harmonic_monitor.js` beside both devices.
 

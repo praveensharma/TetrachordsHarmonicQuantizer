@@ -30,7 +30,7 @@
     "imprint": 0,
     "enablehscroll": 1,
     "enablevscroll": 1,
-    "devicewidth": 690.0,
+    "devicewidth": 910,
     "description": "Receives Tetrachords SysEx, active chord notes and an optional authoritative MIDI note field.",
     "digest": "Tetrachords harmonic-state receiver for the companion Harmonic Quantizer.",
     "tags": "MIDI Tetrachords harmony quantizer",
@@ -50,10 +50,17 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            10.0,
-            310.0,
-            24.0
+            15,
+            7,
+            310,
+            24
+          ],
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
           ]
         }
       },
@@ -61,7 +68,7 @@
         "box": {
           "id": "obj-subtitle",
           "maxclass": "comment",
-          "text": "Tetrachords MIDI track • SysEx, chord notes and optional MIDI note field • MIDI To: No Output",
+          "text": "HARMONIC INPUT  /  Compare SysEx intervals with incoming MIDI notes",
           "patching_rect": [
             20.0,
             42.0,
@@ -70,10 +77,18 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            36.0,
-            510.0,
-            20.0
+            345,
+            10,
+            550,
+            18
+          ],
+          "fontsize": 10.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -123,7 +138,7 @@
             50.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             15.0,
             66.0,
@@ -145,11 +160,26 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            65.0,
-            64.0,
-            600.0,
-            22.0
-          ]
+            15,
+            140,
+            880,
+            23
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "ignoreclick": 1
         }
       },
       {
@@ -277,10 +307,18 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            102.0,
-            60.0,
-            20.0
+            15,
+            103,
+            80,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -338,10 +376,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            75.0,
-            100.0,
-            80.0,
-            22.0
+            100,
+            100,
+            70,
+            23
           ],
           "parameter_enable": 1,
           "varname": "chord_channel",
@@ -375,7 +413,21 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ]
         }
       },
       {
@@ -389,7 +441,7 @@
             560.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             15.0,
             242.0,
@@ -402,7 +454,7 @@
         "box": {
           "id": "obj-chord-hold-label",
           "maxclass": "comment",
-          "text": "Chord Hold",
+          "text": "Hold",
           "patching_rect": [
             435.0,
             270.0,
@@ -411,10 +463,18 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            175.0,
-            102.0,
-            75.0,
-            20.0
+            185,
+            103,
+            65,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -442,10 +502,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            250.0,
-            100.0,
-            80.0,
-            22.0
+            250,
+            100,
+            65,
+            23
           ],
           "parameter_enable": 1,
           "varname": "chord_hold",
@@ -464,7 +524,22 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "SysEx latches each chord update; Gate follows Note On/Off lengths."
         }
       },
       {
@@ -508,22 +583,58 @@
           "id": "obj-valid-source-label",
           "maxclass": "comment",
           "text": "Valid Notes",
-          "patching_rect": [20.0, 340.0, 75.0, 20.0],
+          "patching_rect": [
+            20.0,
+            340.0,
+            75.0,
+            20.0
+          ],
           "presentation": 1,
-          "presentation_rect": [15.0, 134.0, 75.0, 20.0]
+          "presentation_rect": [
+            15,
+            43,
+            80,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
         "box": {
           "id": "obj-valid-source-menu",
           "maxclass": "umenu",
-          "items": ["SysEx Intervals", ",", "MIDI Note Field"],
+          "items": [
+            "SysEx Intervals",
+            ",",
+            "MIDI Note Field"
+          ],
           "numinlets": 1,
           "numoutlets": 3,
-          "outlettype": ["int", "", ""],
-          "patching_rect": [95.0, 340.0, 125.0, 22.0],
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            95.0,
+            340.0,
+            125.0,
+            22.0
+          ],
           "presentation": 1,
-          "presentation_rect": [90.0, 132.0, 125.0, 22.0],
+          "presentation_rect": [
+            100,
+            40,
+            210,
+            23
+          ],
           "parameter_enable": 1,
           "varname": "valid_note_source",
           "saved_attribute_attributes": {
@@ -532,11 +643,31 @@
               "parameter_shortname": "Valid Source",
               "parameter_type": 2,
               "parameter_mmax": 1,
-              "parameter_enum": ["SysEx Intervals", "MIDI Note Field"],
+              "parameter_enum": [
+                "SysEx Intervals",
+                "MIDI Note Field"
+              ],
               "parameter_initial_enable": 1,
-              "parameter_initial": [0]
+              "parameter_initial": [
+                0
+              ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Select the active valid-note collection. Both sources remain visible for comparison."
         }
       },
       {
@@ -546,31 +677,104 @@
           "text": "prepend validsource",
           "numinlets": 1,
           "numoutlets": 1,
-          "outlettype": [""],
-          "patching_rect": [235.0, 340.0, 130.0, 22.0]
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            235.0,
+            340.0,
+            130.0,
+            22.0
+          ]
         }
       },
       {
         "box": {
           "id": "obj-valid-channel-label",
           "maxclass": "comment",
-          "text": "Field Ch",
-          "patching_rect": [385.0, 340.0, 65.0, 20.0],
+          "text": "MIDI field ch",
+          "patching_rect": [
+            385.0,
+            340.0,
+            65.0,
+            20.0
+          ],
           "presentation": 1,
-          "presentation_rect": [235.0, 134.0, 65.0, 20.0]
+          "presentation_rect": [
+            15,
+            73,
+            80,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
         "box": {
           "id": "obj-valid-channel-menu",
           "maxclass": "umenu",
-          "items": ["off", ",", "1", ",", "2", ",", "3", ",", "4", ",", "5", ",", "6", ",", "7", ",", "8", ",", "9", ",", "10", ",", "11", ",", "12", ",", "13", ",", "14", ",", "15", ",", "16"],
+          "items": [
+            "off",
+            ",",
+            "1",
+            ",",
+            "2",
+            ",",
+            "3",
+            ",",
+            "4",
+            ",",
+            "5",
+            ",",
+            "6",
+            ",",
+            "7",
+            ",",
+            "8",
+            ",",
+            "9",
+            ",",
+            "10",
+            ",",
+            "11",
+            ",",
+            "12",
+            ",",
+            "13",
+            ",",
+            "14",
+            ",",
+            "15",
+            ",",
+            "16"
+          ],
           "numinlets": 1,
           "numoutlets": 3,
-          "outlettype": ["int", "", ""],
-          "patching_rect": [450.0, 340.0, 70.0, 22.0],
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            450.0,
+            340.0,
+            70.0,
+            22.0
+          ],
           "presentation": 1,
-          "presentation_rect": [300.0, 132.0, 70.0, 22.0],
+          "presentation_rect": [
+            100,
+            70,
+            80,
+            23
+          ],
           "parameter_enable": 1,
           "varname": "valid_note_channel",
           "saved_attribute_attributes": {
@@ -579,11 +783,46 @@
               "parameter_shortname": "Field Ch",
               "parameter_type": 2,
               "parameter_mmax": 16,
-              "parameter_enum": ["off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"],
+              "parameter_enum": [
+                "off",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15",
+                "16"
+              ],
               "parameter_initial_enable": 1,
-              "parameter_initial": [0]
+              "parameter_initial": [
+                0
+              ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Dedicated MIDI note-field input channel. Off retains the last complete field."
         }
       },
       {
@@ -593,8 +832,15 @@
           "text": "prepend validnotechannel",
           "numinlets": 1,
           "numoutlets": 1,
-          "outlettype": [""],
-          "patching_rect": [535.0, 340.0, 160.0, 22.0]
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            535.0,
+            340.0,
+            160.0,
+            22.0
+          ]
         }
       },
       {
@@ -602,9 +848,34 @@
           "id": "obj-derived-monitor",
           "maxclass": "message",
           "text": "SysEx Intervals: waiting",
-          "patching_rect": [20.0, 375.0, 650.0, 22.0],
+          "patching_rect": [
+            20.0,
+            375.0,
+            650.0,
+            22.0
+          ],
           "presentation": 1,
-          "presentation_rect": [15.0, 164.0, 650.0, 22.0]
+          "presentation_rect": [
+            335,
+            40,
+            560,
+            23
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "ignoreclick": 1
         }
       },
       {
@@ -612,9 +883,34 @@
           "id": "obj-midi-valid-monitor",
           "maxclass": "message",
           "text": "MIDI Note Field: Off",
-          "patching_rect": [20.0, 402.0, 650.0, 22.0],
+          "patching_rect": [
+            20.0,
+            402.0,
+            650.0,
+            22.0
+          ],
           "presentation": 1,
-          "presentation_rect": [15.0, 188.0, 650.0, 22.0]
+          "presentation_rect": [
+            335,
+            69,
+            560,
+            23
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "ignoreclick": 1
         }
       },
       {
@@ -622,9 +918,35 @@
           "id": "obj-active-valid-monitor",
           "maxclass": "message",
           "text": "Active: SysEx Intervals • no complete set",
-          "patching_rect": [20.0, 429.0, 650.0, 22.0],
+          "patching_rect": [
+            20.0,
+            429.0,
+            650.0,
+            22.0
+          ],
           "presentation": 1,
-          "presentation_rect": [15.0, 212.0, 650.0, 22.0]
+          "presentation_rect": [
+            335,
+            98,
+            560,
+            34
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.44,
+            0.85,
+            0.73,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "ignoreclick": 1,
+          "linecount": 2
         }
       },
       {
@@ -644,44 +966,86 @@
     "lines": [
       {
         "patchline": {
-          "source": ["obj-valid-source-menu", 1],
-          "destination": ["obj-valid-source-prepend", 0]
+          "source": [
+            "obj-valid-source-menu",
+            1
+          ],
+          "destination": [
+            "obj-valid-source-prepend",
+            0
+          ]
         }
       },
       {
         "patchline": {
-          "source": ["obj-valid-source-prepend", 0],
-          "destination": ["obj-js", 0]
+          "source": [
+            "obj-valid-source-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
         }
       },
       {
         "patchline": {
-          "source": ["obj-valid-channel-menu", 1],
-          "destination": ["obj-valid-channel-prepend", 0]
+          "source": [
+            "obj-valid-channel-menu",
+            1
+          ],
+          "destination": [
+            "obj-valid-channel-prepend",
+            0
+          ]
         }
       },
       {
         "patchline": {
-          "source": ["obj-valid-channel-prepend", 0],
-          "destination": ["obj-js", 0]
+          "source": [
+            "obj-valid-channel-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
         }
       },
       {
         "patchline": {
-          "source": ["obj-js", 2],
-          "destination": ["obj-derived-monitor", 0]
+          "source": [
+            "obj-js",
+            2
+          ],
+          "destination": [
+            "obj-derived-monitor",
+            0
+          ]
         }
       },
       {
         "patchline": {
-          "source": ["obj-js", 3],
-          "destination": ["obj-midi-valid-monitor", 0]
+          "source": [
+            "obj-js",
+            3
+          ],
+          "destination": [
+            "obj-midi-valid-monitor",
+            0
+          ]
         }
       },
       {
         "patchline": {
-          "source": ["obj-js", 4],
-          "destination": ["obj-active-valid-monitor", 0]
+          "source": [
+            "obj-js",
+            4
+          ],
+          "destination": [
+            "obj-active-valid-monitor",
+            0
+          ]
         }
       },
       {
@@ -848,6 +1212,12 @@
         "implicit": 1
       }
     ],
-    "autosave": 0
+    "autosave": 0,
+    "bgcolor": [
+      0.12,
+      0.14,
+      0.16,
+      1.0
+    ]
   }
 }

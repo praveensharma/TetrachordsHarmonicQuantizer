@@ -20,7 +20,7 @@
       15.0,
       15.0
     ],
-    "devicewidth": 750.0,
+    "devicewidth": 750,
     "description": "MIDI harmonic quantizer with clear scale, chord and mapping modes.",
     "digest": "Tetrachords chord-nearest, scale and intentional mapping processor.",
     "tags": "MIDI Tetrachords harmonic quantizer",
@@ -41,12 +41,19 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            10.0,
-            290.0,
-            24.0
+            15,
+            7,
+            245,
+            24
           ],
-          "text": "Harmonic Quantizer"
+          "text": "Harmonic Quantizer",
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ]
         }
       },
       {
@@ -63,12 +70,20 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            36.0,
-            540.0,
-            20.0
+            290,
+            10,
+            440,
+            18
           ],
-          "text": "Source MIDI track • Monitor In • MIDI To: your hardware target"
+          "text": "PITCH  /  REGISTER  /  ENSEMBLE",
+          "fontsize": 10.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -158,7 +173,7 @@
             50.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             15.0,
             66.0,
@@ -185,12 +200,27 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            65.0,
-            64.0,
-            660.0,
-            22.0
+            15,
+            121,
+            720,
+            20
           ],
-          "text": "set \"Waiting for Tetrachords harmony\""
+          "text": "Waiting for Tetrachords harmony",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "ignoreclick": 1
         }
       },
       {
@@ -259,7 +289,7 @@
             233.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             15.0,
             228.0,
@@ -411,11 +441,32 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            595.0,
-            99.0,
-            20.0,
-            20.0
-          ]
+            590,
+            38,
+            17,
+            17
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "color": [
+            0.44,
+            0.85,
+            0.73,
+            1.0
+          ],
+          "hint": "Clear local voice memory; held-note releases remain intact."
         }
       },
       {
@@ -432,12 +483,20 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            620.0,
-            100.0,
-            90.0,
-            20.0
+            615,
+            38,
+            125,
+            18
           ],
-          "text": "Reset Voices"
+          "text": "Reset Voices",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -490,7 +549,7 @@
             380.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             15.0,
             252,
@@ -509,12 +568,20 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            100.0,
-            40.0,
-            20.0
+            15,
+            38,
+            40,
+            18
           ],
-          "text": "Mode"
+          "text": "Mode",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -629,10 +696,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            65.0,
-            98.0,
-            145.0,
-            22.0
+            60,
+            35,
+            165,
+            23
           ],
           "parameter_enable": 1,
           "varname": "quantizer_mode",
@@ -657,7 +724,21 @@
                 2
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ]
         }
       },
       {
@@ -686,12 +767,20 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            132.0,
-            70.0,
-            20.0
+            15,
+            67,
+            68,
+            18
           ],
-          "text": "Chord Map"
+          "text": "Chord Map",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -718,10 +807,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            85.0,
-            130.0,
-            120.0,
-            22.0
+            85,
+            64,
+            130,
+            23
           ],
           "parameter_enable": 1,
           "varname": "chord_map",
@@ -740,7 +829,21 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ]
         }
       },
       {
@@ -769,12 +872,20 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            230.0,
-            100.0,
-            50.0,
-            20.0
+            245,
+            38,
+            45,
+            18
           ],
-          "text": "Change"
+          "text": "Change",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -803,10 +914,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            285.0,
-            98.0,
-            120.0,
-            22.0
+            295,
+            35,
+            110,
+            23
           ],
           "parameter_enable": 1,
           "varname": "harmony_change",
@@ -826,7 +937,21 @@
                 1
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ]
         }
       },
       {
@@ -855,12 +980,20 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            425.0,
-            100.0,
-            52.0,
-            20.0
+            425,
+            38,
+            48,
+            18
           ],
-          "text": "Gravity"
+          "text": "Gravity",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -889,10 +1022,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            485.0,
-            98.0,
-            90.0,
-            22.0
+            478,
+            35,
+            90,
+            23
           ],
           "parameter_enable": 1,
           "varname": "root_gravity",
@@ -912,7 +1045,21 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ]
         }
       },
       {
@@ -941,12 +1088,20 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            230.0,
-            132.0,
-            70.0,
-            20.0
+            235,
+            67,
+            72,
+            18
           ],
-          "text": "Continuity"
+          "text": "Continuity",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -969,10 +1124,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            300.0,
-            130.0,
-            55.0,
-            22.0
+            310,
+            64,
+            50,
+            23
           ],
           "parameter_enable": 1,
           "varname": "continuity",
@@ -988,7 +1143,22 @@
                 60
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Stateful Nearest: 0% is nearest-note quantization; higher values favor continuity."
         }
       },
       {
@@ -1017,12 +1187,20 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            385.0,
-            132.0,
-            60.0,
-            20.0
+            385,
+            67,
+            55,
+            18
           ],
-          "text": "Register"
+          "text": "Register",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -1049,10 +1227,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            445.0,
-            130.0,
-            75.0,
-            22.0
+            445,
+            64,
+            80,
+            23
           ],
           "parameter_enable": 1,
           "varname": "register_mode",
@@ -1071,7 +1249,22 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Free bypasses register boundaries. Limited uses the existing mode-specific Low/High behavior."
         }
       },
       {
@@ -1100,12 +1293,20 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            530.0,
-            132.0,
-            30.0,
-            20.0
+            535,
+            67,
+            30,
+            18
           ],
-          "text": "Low"
+          "text": "Low",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -1128,10 +1329,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            560.0,
-            130.0,
-            50.0,
-            22.0
+            570,
+            64,
+            48,
+            23
           ],
           "parameter_enable": 1,
           "varname": "register_low",
@@ -1147,7 +1348,21 @@
                 24
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ]
         }
       },
       {
@@ -1176,12 +1391,20 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            620.0,
-            132.0,
-            32.0,
-            20.0
+            630,
+            67,
+            34,
+            18
           ],
-          "text": "High"
+          "text": "High",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ]
         }
       },
       {
@@ -1204,10 +1427,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            655.0,
-            130.0,
-            50.0,
-            22.0
+            670,
+            64,
+            48,
+            23
           ],
           "parameter_enable": 1,
           "varname": "register_high",
@@ -1223,7 +1446,21 @@
                 48
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ]
         }
       },
       {
@@ -1278,9 +1515,17 @@
           "presentation": 1,
           "presentation_rect": [
             15,
-            165,
+            96,
             65,
-            20
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -1305,9 +1550,9 @@
           "presentation": 1,
           "presentation_rect": [
             85,
-            163,
-            45,
-            22
+            93,
+            50,
+            23
           ],
           "parameter_enable": 1,
           "varname": "ensemble_group",
@@ -1323,7 +1568,22 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "0 = Off. Use the same group on coordinated parts. Enabled groups add a 4 ms collection window."
         }
       },
       {
@@ -1359,10 +1619,18 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            135,
-            165,
+            140,
+            96,
             55,
-            20
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -1382,9 +1650,17 @@
           "presentation": 1,
           "presentation_rect": [
             205,
-            165,
+            96,
             35,
-            20
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -1409,9 +1685,9 @@
           "presentation": 1,
           "presentation_rect": [
             245,
-            163,
+            93,
             45,
-            22
+            23
           ],
           "parameter_enable": 1,
           "varname": "ensemble_part",
@@ -1427,7 +1703,22 @@
                 1
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Choose a unique Part 1–4 within the ensemble."
         }
       },
       {
@@ -1463,10 +1754,18 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            310,
-            165,
+            315,
+            96,
             95,
-            20
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -1490,10 +1789,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            405,
-            163,
-            55,
-            22
+            410,
+            93,
+            50,
+            23
           ],
           "parameter_enable": 1,
           "varname": "ensemble_separation",
@@ -1509,7 +1808,22 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Soft preference against exact unisons. 0% preserves the independent quantizer result."
         }
       },
       {
@@ -1548,10 +1862,31 @@
           "presentation": 1,
           "presentation_rect": [
             505,
-            164,
-            20,
-            20
-          ]
+            96,
+            17,
+            17
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "color": [
+            0.44,
+            0.85,
+            0.73,
+            1.0
+          ],
+          "hint": "Clear pitch memory for every part in this ensemble."
         }
       },
       {
@@ -1569,10 +1904,18 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            530,
-            165,
-            130,
-            20
+            535,
+            96,
+            135,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -1612,11 +1955,26 @@
           "presentation": 1,
           "presentation_rect": [
             15,
-            196,
-            710,
-            22
+            145,
+            720,
+            19
           ],
-          "text": "set \"Ensemble Off — independent quantization\""
+          "text": "Ensemble Off — independent quantization",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.44,
+            0.85,
+            0.73,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "ignoreclick": 1
         }
       }
     ],
@@ -1709,7 +2067,7 @@
         "patchline": {
           "destination": [
             "obj-status",
-            1
+            0
           ],
           "source": [
             "obj-js",
@@ -2280,6 +2638,12 @@
       }
     ],
     "autosave": 0,
-    "oscreceiveudpport": 0
+    "oscreceiveudpport": 0,
+    "bgcolor": [
+      0.12,
+      0.14,
+      0.16,
+      1.0
+    ]
   }
 }

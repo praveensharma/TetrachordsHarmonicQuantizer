@@ -1,6 +1,6 @@
 # AMXD build pipeline
 
-Build and validate both devices without opening Max:
+Build and validate all three devices without opening Max:
 
 ```bash
 python3 tools/build_amxd.py
@@ -12,7 +12,7 @@ container template when available, otherwise it uses the committed device in
 patch JSON. It then parses the generated container and requires its JSON to
 equal the source `.maxpat` object.
 
-After reviewing source changes, install both devices atomically:
+After reviewing source changes, install the devices at their existing paths:
 
 ```bash
 python3 tools/build_amxd.py --install
@@ -29,7 +29,12 @@ installed yet. Verify the installed files at any time with:
 python3 tools/build_amxd.py --verify-installed
 ```
 
-The script never launches Max or Ableton.
+The script never launches Max or Ableton. It now includes the dedicated
+**Tetrachords Note Field Input**, whose Ableton track filters hardware channel 3
+before Live converts channels internally. The main receiver track filters the
+chord channel (normally 1), with **Field input = Separate track**. See README's
+two-track setup. Run `node tests/test_field_input.js` to verify the role-separated
+transport, atomic capture and preservation of chord/SysEx state.
 # Read-only performance monitors
 
 ## Ensemble controls

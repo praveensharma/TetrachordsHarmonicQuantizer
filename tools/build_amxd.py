@@ -62,6 +62,14 @@ class Device:
 
 DEVICES = (
     Device(
+        name='Tetrachords Note Field Input',
+        maxpat=PROJECT_ROOT / 'Note_Field_Input/Tetrachords Note Field Input.maxpat',
+        javascript=PROJECT_ROOT / 'Note_Field_Input/note_field_input.js',
+        install_dir=MAX4LIVE_LIBRARY / 'Tetrachords Note Field Input',
+        filename='Tetrachords Note Field Input.amxd',
+        install_alias_dirs=(MIDI_EFFECT_LIBRARY,),
+    ),
+    Device(
         name="Harmonic Quantizer",
         maxpat=PROJECT_ROOT
         / "Harmonic_Quantizer/Harmonic Quantizer.maxpat",
@@ -197,6 +205,8 @@ def template_for(device: Device) -> Path:
         return device.installed_amxd
     if device.seed_amxd.exists():
         return device.seed_amxd
+    if device.name=='Tetrachords Note Field Input':
+        return MAX4LIVE_LIBRARY / 'Harmonic Quantizer/Harmonic Quantizer.amxd'
     raise ValueError(
         f"{device.name}: no installed AMXD or committed dist seed is available"
     )
@@ -356,6 +366,8 @@ def main() -> int:
                 build_device(device, args.dist / device.filename)
                 for device in DEVICES
             ]
+            for device in DEVICES:
+                atomic_write(args.dist / device.javascript.name, device.javascript.read_bytes())
         print(json.dumps({"ok": True, "devices": results}, indent=2))
         return 0
     except (OSError, ValueError) as error:

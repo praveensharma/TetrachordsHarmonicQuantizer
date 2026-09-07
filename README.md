@@ -87,7 +87,7 @@ Create a dedicated MIDI track:
 
 ```text
 MIDI From:  Tetrachords USB MIDI
-Channel:    All Channels
+Channel:    Ch. 1 (Tetrachords chord output)
 Monitor:    In
 Device:     Tetrachords Harmony Receiver
 MIDI To:    No Output
@@ -110,7 +110,7 @@ fallback label when updating Live's scale UI. The octave duplicate in the eight
 intervals is removed when building the pitch-class set.
 
 For an A/B comparison, Tetrachords may also send a collection of simultaneous
-Note Ons on a dedicated channel. Set **Field Ch** to that channel, then switch
+Note Ons on a dedicated channel. Use the separate input track below, then switch
 **Valid Notes** between **SysEx Intervals** and **MIDI Note Field** while
 playback continues. After a 25 ms quiet window, the receiver atomically commits
 whatever non-empty Note On burst was sent as a complete replacement field;
@@ -118,14 +118,37 @@ ordinary releases do not clear or merge it. Its monitor rows
 show the raw SysEx-derived notes, raw MIDI notes, and active source, plus an
 `EXACT RAW MATCH`, `SAME PITCH CLASSES`, or `DIFFERENT` comparison.
 
-The track must receive **All Channels** so it can see the chord channel and the
-dedicated note-field channel together. The note-field channel is excluded from
-chord capture even when **Chord Ch** is set to **all**.
+### Dedicated note-field track (required for the reliable two-stream setup)
+
+Live was observed presenting hardware channel-3 notes to Max as channel 1.
+Do not combine the two note streams using All Channels and filter inside Max.
+Filter them at the Ableton track inputs instead:
+
+| Track | Ableton input | Device | Device settings |
+|---|---|---|---|
+| Harmony Receiver | Tetrachords → Ch. 1 | Tetrachords Harmony Receiver | Chord Ch 1; Field input Separate track; Valid Notes MIDI Note Field |
+| Note Field | Tetrachords → Ch. 3 | Tetrachords Note Field Input | No internal channel selector needed |
+
+Both tracks: Monitor In, MIDI To No Output. Put each device first in its chain;
+no Note Length/Latch is required. Use only one Harmony Receiver and one Note
+Field Input for this shared harmonic system. Existing quantizer tracks stay unchanged.
+
+The field device buffers any nonempty Note On burst, commits after 25 ms of
+quiet, retains exact MIDI pitches (including octave duplicates), and ignores
+Note Offs. Only the receiver publishes harmonic state. The field device uses
+a separate mailbox so it can load before the receiver without losing its last
+completed collection; that collection is retained if the helper is disabled.
+An oversized burst is discarded, never partially committed.
+
+Select **Separate track** explicitly in existing saved receiver instances;
+fresh devices default to it. Numeric Field input options remain legacy local
+filters, not hardware channel selectors. Confirm the receiver's SysEx/root
+readout still updates from the chord track, then confirm the field and chord
+readouts change independently. Host/hardware validation remains required.
 
 Ordinary chord Note Ons arriving on the same track are captured as the active
-chord. Set **Chord Ch** to the Tetrachords MIDI output channel carrying that
-chord, or leave it at **all** only when no other Tetrachords note streams reach
-this receiver track.
+chord. Set **Chord Ch** to **1** (the channel delivered inside Live), while
+the Ableton track input selects Tetrachords' actual chord-output channel.
 
 **Chord Hold** defaults to **sysex**. Each valid Tetrachords SysEx begins a fresh
 capture, the following chord Note On burst replaces the latched chord, and Note

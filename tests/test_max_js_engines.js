@@ -813,7 +813,7 @@ assert.deepStrictEqual(
 assert.deepStrictEqual(
     patchBox(receiverPatch, "obj-valid-channel-menu")
         .saved_attribute_attributes.valueof.parameter_initial,
-    [0]
+    [17]
 );
 assert.ok(
     !quantizerPatch.patcher.boxes.some((entry) =>

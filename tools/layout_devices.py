@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 from monitor_layout import add_monitor
+from field_input_layout import generate, receiver_transport
 
 ROOT = Path(__file__).resolve().parent.parent
 BG = [0.12, 0.14, 0.16, 1.0]
@@ -117,6 +118,8 @@ def update(relative, positions, width, receiver=False):
                 line['destination'][1] = 0
     if not receiver:
         ensemble_selectors(patch)
+    else:
+        receiver_transport(patch)
     add_monitor(patch, receiver)
     path.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + '\n')
 
@@ -149,6 +152,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true', help='Validate installed-source presentation bounds without editing')
     args = parser.parse_args()
+    if not args.check:generate()
     files = [('Harmonic_Quantizer/Harmonic Quantizer.maxpat', QUANTIZER, 750, False),
              ('Tetrachords_Harmony_Receiver/Tetrachords Harmony Receiver.maxpat', RECEIVER, 790, True)]
     for relative, positions, width, receiver in files:

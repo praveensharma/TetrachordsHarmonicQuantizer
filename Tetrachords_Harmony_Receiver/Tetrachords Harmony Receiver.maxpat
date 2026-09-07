@@ -705,7 +705,7 @@
         "box": {
           "id": "obj-valid-channel-label",
           "maxclass": "comment",
-          "text": "MIDI field ch",
+          "text": "Field input",
           "patching_rect": [
             385.0,
             340.0,
@@ -768,7 +768,9 @@
             ",",
             "15",
             ",",
-            "16"
+            "16",
+            ",",
+            "Separate track"
           ],
           "numinlets": 1,
           "numoutlets": 3,
@@ -787,7 +789,7 @@
           "presentation_rect": [
             100,
             70,
-            80,
+            210,
             23
           ],
           "parameter_enable": 1,
@@ -797,7 +799,7 @@
               "parameter_longname": "MIDI Note Field Channel",
               "parameter_shortname": "Field Ch",
               "parameter_type": 2,
-              "parameter_mmax": 16,
+              "parameter_mmax": 17,
               "parameter_enum": [
                 "off",
                 "1",
@@ -815,11 +817,12 @@
                 "13",
                 "14",
                 "15",
-                "16"
+                "16",
+                "Separate track"
               ],
               "parameter_initial_enable": 1,
               "parameter_initial": [
-                0
+                17
               ]
             }
           },
@@ -837,7 +840,7 @@
             0.28,
             1.0
           ],
-          "hint": "Dedicated MIDI note-field input channel. Off retains the last complete field.",
+          "hint": "Separate track receives the Note Field Input device. Numeric choices are legacy in-device MIDI channel filters.",
           "hidden": 0
         }
       },
@@ -987,6 +990,21 @@
             230.0,
             95.0,
             22.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "field-transport",
+          "maxclass": "newobj",
+          "text": "r tetrachords_note_field_v1",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            20,
+            2000,
+            240,
+            22
           ]
         }
       },
@@ -1209,7 +1227,7 @@
         "patchline": {
           "source": [
             "obj-valid-channel-menu",
-            1
+            0
           ],
           "destination": [
             "obj-valid-channel-prepend",
@@ -1413,6 +1431,18 @@
         "patchline": {
           "source": [
             "obj-chord-hold-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "field-transport",
             0
           ],
           "destination": [

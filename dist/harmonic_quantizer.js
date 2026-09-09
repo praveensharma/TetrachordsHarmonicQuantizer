@@ -8,7 +8,8 @@
 //
 // Every incoming MIDI note is quantized, regardless of channel. All non-note
 // channel messages are preserved. Note Offs use the exact pitch chosen for
-// their Note Ons.
+// their Note Ons. An optional Hold Last Pitch behavior retains one quantized
+// output per channel for gestural pitch sources with separate articulation.
 
 autowatch = 1;
 inlets = 2;
@@ -69,6 +70,14 @@ var registerMode = "limited";
 var registerLow = 24;
 var registerHigh = 48;
 var rootGravity = 0;
+// Follow Gate preserves the incoming Note On/Off lifecycle. Hold Last Pitch is
+// intended for gestural pitch sources whose articulation comes from elsewhere:
+// each channel keeps one output note active until a replacement Note On arrives.
+var inputBehavior = "follow";
+var inputStabilityMs = 20;
+var heldNotes = {};
+var pendingStableNotes = {};
+var inputStabilityTask = null;
 
 // Clear menu labels map to the original internal identifiers so the DSP logic
 // remains stable while the presentation names describe the musical behavior.
@@ -93,6 +102,7 @@ var CHORD_MAP_MENU_VALUES = ["pitchclass", "voicing"];
 var TIMING_MENU_VALUES = ["immediate", "nextnote", "nextbar"];
 var GRAVITY_MENU_VALUES = [0, 1, 2];
 var REGISTER_MENU_VALUES = ["limited", "free"];
+var INPUT_BEHAVIOR_MENU_VALUES = ["follow", "hold"];
 
 // Each source channel/note has a FIFO stack of output pitches.
 var activeNoteMappings = {};
@@ -351,6 +361,7 @@ function ensemble_flush(force) {
 function notifydeleted() {
     if (ensembleTask) { ensembleTask.cancel(); }
     if (harmonyPollTask) { harmonyPollTask.cancel(); }
+    if (inputStabilityTask) { inputStabilityTask.cancel(); }
     ensemble_release();
 }
 
@@ -423,6 +434,24 @@ function restore_controls_from_patcher() {
         registerHigh = clamp(value | 0, 0, 127);
     }
 
+    value = patcher_control_value("input_behavior");
+    inputBehavior = menu_value(
+        value,
+        INPUT_BEHAVIOR_MENU_VALUES,
+        {
+            "follow-gate": "follow",
+            "follow gate": "follow",
+            "hold-last-pitch": "hold",
+            "hold last pitch": "hold"
+        },
+        inputBehavior
+    );
+
+    value = patcher_control_value("input_stability");
+    if (value !== null) {
+        inputStabilityMs = clamp(value | 0, 0, 100);
+    }
+
     if (registerLow > registerHigh) {
         registerHigh = registerLow;
     }
@@ -433,7 +462,8 @@ function restore_controls_from_patcher() {
         " timing=" + harmonyTiming +
         " gravity=" + rootGravity +
         " continuity=" + continuityAmount +
-        " register=" + registerMode + "/" + registerLow + "-" + registerHigh
+        " register=" + registerMode + "/" + registerLow + "-" + registerHigh +
+        " input=" + inputBehavior + "/" + inputStabilityMs + "ms"
     );
 }
 
@@ -907,6 +937,52 @@ function continuity(value) {
     status("Continuity: " + continuityAmount + "%");
 }
 
+function inputbehavior(value) {
+    var normalized = typeof value === "number"
+        ? INPUT_BEHAVIOR_MENU_VALUES[value | 0]
+        : String(value).toLowerCase();
+
+    if (normalized === "follow-gate" || normalized === "follow gate") {
+        normalized = "follow";
+    } else if (
+        normalized === "hold-last-pitch" ||
+        normalized === "hold last pitch"
+    ) {
+        normalized = "hold";
+    }
+
+    if (INPUT_BEHAVIOR_MENU_VALUES.indexOf(normalized) < 0) {
+        return;
+    }
+
+    if (normalized !== inputBehavior) {
+        ensemble_flush(true);
+        cancel_pending_stable_notes();
+        release_all_managed_notes();
+        inputBehavior = normalized;
+    }
+
+    status(input_behavior_description());
+}
+
+function stability(value) {
+    inputStabilityMs = clamp(value | 0, 0, 100);
+    if (inputStabilityMs === 0) {
+        input_stability_flush(true);
+    }
+    status(input_behavior_description());
+}
+
+function input_behavior_description() {
+    if (inputBehavior === "hold") {
+        return "Input: Hold Last Pitch" +
+            (inputStabilityMs > 0
+                ? " | settle " + inputStabilityMs + " ms"
+                : " | immediate");
+    }
+    return "Input: Follow Gate | source Note Offs preserved";
+}
+
 function registermode(value) {
     if (value !== "limited" && value !== "free") {
         return;
@@ -949,24 +1025,76 @@ function gravity(value) {
 }
 
 function bypass(v) {
+    var nextEnabled = (v | 0) ? 0 : 1;
     ensemble_flush(true);
-    enabled = (v | 0) ? 0 : 1;
+    if (enabled && !nextEnabled) {
+        cancel_pending_stable_notes();
+        release_all_managed_notes();
+    }
+    enabled = nextEnabled;
     status(enabled ? "Quantizer enabled" : "Quantizer bypassed");
 }
 
-function panic() {
-    if (ensembleTask) { ensembleTask.cancel(); }
-    ensembleQueue = [];
-    ensemble_release();
-    var channel;
+function cancel_pending_stable_notes() {
+    pendingStableNotes = {};
+    if (inputStabilityTask) {
+        inputStabilityTask.cancel();
+    }
+}
+
+function release_output_reference(channel, outputNote, velocity) {
+    var outputKey = note_key(channel, outputNote);
+
+    if (
+        outputNoteRefCounts.hasOwnProperty(outputKey) &&
+        outputNoteRefCounts[outputKey] > 1
+    ) {
+        outputNoteRefCounts[outputKey] -= 1;
+        return;
+    }
+
+    delete outputNoteRefCounts[outputKey];
+    send_midi3(0x80 | ((channel - 1) & 0x0F), outputNote, velocity || 0);
+}
+
+function remove_active_mapping(channel, inputNote, outputNote) {
+    var sourceKey = note_key(channel, inputNote);
+    var mappings = activeNoteMappings[sourceKey];
+    var index;
+
+    if (!mappings || !mappings.length) {
+        return;
+    }
+
+    index = mappings.indexOf(outputNote);
+    if (index >= 0) {
+        mappings.splice(index, 1);
+    }
+    if (mappings.length === 0) {
+        delete activeNoteMappings[sourceKey];
+    }
+}
+
+function release_held_note(channel) {
+    var held = heldNotes[channel];
+
+    if (!held) {
+        return;
+    }
+
+    remove_active_mapping(channel, held.input, held.output);
+    release_output_reference(channel, held.output, 0);
+    delete heldNotes[channel];
+}
+
+function release_all_managed_notes() {
     var key;
     var parts;
+    var channel;
     var note;
     var count;
     var i;
 
-    // Send explicit Note Offs before discarding the mapping. Some hardware,
-    // including older MIDI implementations, does not act on CC 123 reliably.
     for (key in outputNoteRefCounts) {
         if (!outputNoteRefCounts.hasOwnProperty(key)) {
             continue;
@@ -982,11 +1110,23 @@ function panic() {
 
     activeNoteMappings = {};
     outputNoteRefCounts = {};
+    heldNotes = {};
+}
+
+function panic() {
+    if (ensembleTask) { ensembleTask.cancel(); }
+    ensembleQueue = [];
+    ensemble_release();
+    cancel_pending_stable_notes();
+
+    // Send explicit Note Offs before discarding the mapping. Some hardware,
+    // including older MIDI implementations, does not act on CC 123 reliably.
+    release_all_managed_notes();
     melodyState = {};
     voiceState = {};
     lastVoiceDecision = {};
 
-    for (channel = 1; channel <= 16; channel++) {
+    for (var channel = 1; channel <= 16; channel++) {
         send_midi3(0xB0 | ((channel - 1) & 0x0F), 123, 0);
         // Center pitch bend (14-bit value 8192: LSB 0, MSB 64).
         send_midi3(0xE0 | ((channel - 1) & 0x0F), 0, 64);
@@ -1139,6 +1279,72 @@ function process_channel_message(statusByte, data1, data2) {
 }
 
 function handle_note_on(channel, inputNote, velocity) {
+    if (inputBehavior === "hold" && inputStabilityMs > 0) {
+        if (
+            pendingStableNotes[channel] &&
+            pendingStableNotes[channel].input === inputNote
+        ) {
+            // Repeated reports of the same pitch confirm stability rather than
+            // restarting the timer forever.
+            pendingStableNotes[channel].velocity = velocity;
+        } else {
+            pendingStableNotes[channel] = {
+                channel: channel,
+                input: inputNote,
+                velocity: velocity,
+                due: new Date().getTime() + inputStabilityMs
+            };
+        }
+        runtime_trace(
+            "SETTLE_QUEUE\tch=" + channel + " note=" + inputNote +
+            " delay=" + inputStabilityMs
+        );
+        if (typeof Task !== "undefined") {
+            if (!inputStabilityTask) {
+                inputStabilityTask = new Task(input_stability_tick, this);
+            }
+            inputStabilityTask.schedule(1);
+        }
+        return;
+    }
+
+    process_note_on_now(channel, inputNote, velocity);
+}
+
+function input_stability_tick() {
+    input_stability_flush(false);
+}
+
+function input_stability_flush(force) {
+    var now = new Date().getTime();
+    var ready = [];
+    var channel;
+
+    for (channel in pendingStableNotes) {
+        if (!pendingStableNotes.hasOwnProperty(channel)) {
+            continue;
+        }
+        if (force || now >= pendingStableNotes[channel].due) {
+            ready.push(pendingStableNotes[channel]);
+            delete pendingStableNotes[channel];
+        }
+    }
+
+    ready.sort(function (a, b) { return a.channel - b.channel; });
+    for (var i = 0; i < ready.length; i++) {
+        process_note_on_now(
+            ready[i].channel,
+            ready[i].input,
+            ready[i].velocity
+        );
+    }
+
+    if (Object.keys(pendingStableNotes).length && inputStabilityTask) {
+        inputStabilityTask.schedule(1);
+    }
+}
+
+function process_note_on_now(channel, inputNote, velocity) {
     var outputNote;
     if (ensembleGroup) { ensemble_refresh(); }
 
@@ -1163,6 +1369,11 @@ function deliver_note_on(channel, inputNote, velocity, outputNote, remember) {
         ? copy_voice_state(voiceState[channel]) : null;
     var sourceKey = note_key(channel, inputNote);
     var outputKey;
+
+    if (inputBehavior === "hold") {
+        release_held_note(channel);
+    }
+
     outputKey = note_key(channel, outputNote);
 
     if (!activeNoteMappings.hasOwnProperty(sourceKey)) {
@@ -1193,7 +1404,23 @@ function deliver_note_on(channel, inputNote, velocity, outputNote, remember) {
         );
     }
     send_midi3(0x90 | ((channel - 1) & 0x0F), outputNote, velocity);
-    visual_note(inputNote,outputNote,channel);
+    if (inputBehavior === "hold") {
+        heldNotes[channel] = {input: inputNote, output: outputNote};
+        status(
+            "Holding " + midi_note_name(outputNote) +
+            " from " + midi_note_name(inputNote) +
+            " | ch " + channel +
+            (inputStabilityMs > 0
+                ? " | settle " + inputStabilityMs + " ms"
+                : " | immediate")
+        );
+    }
+    visual_note(
+        inputNote,
+        outputNote,
+        channel,
+        inputBehavior === "hold" ? "Hold Last Pitch" : mode_description()
+    );
 }
 
 function copy_voice_state(state) {
@@ -1298,6 +1525,13 @@ function runtime_trace(line) {
 }
 
 function handle_note_off(channel, inputNote, velocity) {
+    if (inputBehavior === "hold") {
+        runtime_trace(
+            "HOLD_IGNORE_OFF\tch=" + channel + " note=" + inputNote
+        );
+        return;
+    }
+
     if (!ensembleDelivering && ensembleGroup) {
         ensembleQueue.push({channel: channel, input: inputNote, velocity: velocity,
             due: new Date().getTime() + ENSEMBLE_WINDOW_MS});
@@ -1309,7 +1543,6 @@ function handle_note_off(channel, inputNote, velocity) {
     }
     var sourceKey = note_key(channel, inputNote);
     var outputNote;
-    var outputKey;
 
     if (
         activeNoteMappings.hasOwnProperty(sourceKey) &&
@@ -1325,18 +1558,7 @@ function handle_note_off(channel, inputNote, velocity) {
         outputNote = quantize_note(inputNote, channel, 0);
     }
 
-    outputKey = note_key(channel, outputNote);
-
-    if (
-        outputNoteRefCounts.hasOwnProperty(outputKey) &&
-        outputNoteRefCounts[outputKey] > 1
-    ) {
-        outputNoteRefCounts[outputKey] -= 1;
-        return;
-    }
-
-    delete outputNoteRefCounts[outputKey];
-    send_midi3(0x80 | ((channel - 1) & 0x0F), outputNote, velocity);
+    release_output_reference(channel, outputNote, velocity);
 }
 
 function quantize_note(inputNote, channel, velocity) {

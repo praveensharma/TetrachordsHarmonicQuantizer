@@ -2172,6 +2172,240 @@
       },
       {
         "box": {
+          "id": "obj-input-label",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            125,
+            40,
+            18
+          ],
+          "text": "Input",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-input-behavior-menu",
+          "maxclass": "umenu",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "items": [
+            "Follow Gate",
+            ",",
+            "Hold Last Pitch"
+          ],
+          "patching_rect": [
+            120,
+            1960,
+            155,
+            22
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            55,
+            122,
+            155,
+            23
+          ],
+          "parameter_enable": 1,
+          "varname": "input_behavior",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Input Behavior",
+              "parameter_shortname": "Input",
+              "parameter_type": 2,
+              "parameter_mmax": 1,
+              "parameter_enum": [
+                "Follow Gate",
+                "Hold Last Pitch"
+              ],
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                0
+              ]
+            }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Follow Gate preserves source Note Offs. Hold Last Pitch keeps one quantized pitch active per MIDI channel until the next Note On.",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-input-behavior-prepend",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            290,
+            1960,
+            145,
+            22
+          ],
+          "text": "prepend inputbehavior"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-input-stability-label",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "presentation": 1,
+          "presentation_rect": [
+            230,
+            125,
+            44,
+            18
+          ],
+          "text": "Settle",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-input-stability-number",
+          "maxclass": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            "bang"
+          ],
+          "patching_rect": [
+            450,
+            1960,
+            50,
+            22
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            275,
+            122,
+            50,
+            23
+          ],
+          "parameter_enable": 1,
+          "varname": "input_stability",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Input Settle Time",
+              "parameter_shortname": "Settle",
+              "parameter_type": 3,
+              "parameter_mmin": 0,
+              "parameter_mmax": 100,
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                20
+              ]
+            }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Hold Last Pitch only: wait for this many milliseconds of pitch stability before replacing the held output.",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-input-stability-unit",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "presentation": 1,
+          "presentation_rect": [
+            330,
+            125,
+            24,
+            18
+          ],
+          "text": "ms",
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-input-stability-prepend",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            515,
+            1960,
+            110,
+            22
+          ],
+          "text": "prepend stability"
+        }
+      },
+      {
+        "box": {
           "id": "monitor-play-tab",
           "maxclass": "textbutton",
           "numinlets": 1,
@@ -2330,7 +2564,7 @@
           "numoutlets": 0,
           "patching_rect": [
             15,
-            121,
+            151,
             720,
             43
           ],
@@ -2338,13 +2572,13 @@
           "presentation": 1,
           "presentation_rect": [
             15,
-            121,
+            151,
             720,
             43
           ],
           "jsarguments": [
             "compact",
-            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
+            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"obj-input-label\", \"input_behavior\", \"obj-input-stability-label\", \"input_stability\", \"obj-input-stability-unit\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
           ],
           "filename": "harmonic_monitor.js",
           "parameter_enable": 0,
@@ -2368,7 +2602,7 @@
             15,
             35,
             720,
-            85
+            159
           ],
           "varname": "monitor-detail",
           "presentation": 1,
@@ -2376,11 +2610,11 @@
             15,
             35,
             720,
-            85
+            159
           ],
           "jsarguments": [
             "detail",
-            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
+            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"obj-input-label\", \"input_behavior\", \"obj-input-stability-label\", \"input_stability\", \"obj-input-stability-unit\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
           ],
           "hidden": 1,
           "filename": "harmonic_monitor.js",
@@ -3089,6 +3323,78 @@
           ],
           "destination": [
             "obj-part-number",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-input-behavior-menu",
+            0
+          ],
+          "destination": [
+            "obj-input-behavior-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-input-behavior-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-thisdevice",
+            0
+          ],
+          "destination": [
+            "obj-input-behavior-menu",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-input-stability-number",
+            0
+          ],
+          "destination": [
+            "obj-input-stability-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-input-stability-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-thisdevice",
+            0
+          ],
+          "destination": [
+            "obj-input-stability-number",
             0
           ]
         }

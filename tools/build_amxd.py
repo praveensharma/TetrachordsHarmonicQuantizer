@@ -42,6 +42,7 @@ class Device:
     install_dir: Path
     filename: str
     install_alias_dirs: tuple[Path, ...] = ()
+    support_files: tuple[Path, ...] = ()
 
     @property
     def install_dirs(self) -> tuple[Path, ...]:
@@ -87,6 +88,10 @@ DEVICES = (
         / "Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js",
         install_dir=MAX4LIVE_LIBRARY / "Tetrachords Harmony Receiver",
         filename="Tetrachords Harmony Receiver.amxd",
+        support_files=(
+            PROJECT_ROOT / "Tetrachords_Harmony_Receiver/live_scale_matcher.js",
+            PROJECT_ROOT / "Tetrachords_Harmony_Receiver/live_scale_bridge.js",
+        ),
     ),
 )
 
@@ -267,6 +272,15 @@ def verify_installed(devices: Iterable[Device]) -> list[dict[str, object]]:
                 raise ValueError(
                     f"{device.name}: installed JavaScript does not match source"
                 )
+            for support_file in device.support_files:
+                installed_support = install_dir / support_file.name
+                if (
+                    not installed_support.exists()
+                    or installed_support.read_bytes() != support_file.read_bytes()
+                ):
+                    raise ValueError(
+                        f"{device.name}: installed {support_file.name} differs from source"
+                    )
             locations.append(
                 {
                     "installed": str(installed),
@@ -331,6 +345,12 @@ def main() -> int:
                         backups[device.name].append(
                             str(backup(installed_javascript, stamp))
                         )
+                    for support_file in device.support_files:
+                        installed_support = install_dir / support_file.name
+                        if installed_support.exists():
+                            backups[device.name].append(
+                                str(backup(installed_support, stamp))
+                            )
 
             results = []
             for device in DEVICES:
@@ -348,6 +368,12 @@ def main() -> int:
                         install_dir / device.javascript.name,
                         device.javascript.read_bytes(),
                     )
+                for install_dir in device.install_dirs:
+                    for support_file in device.support_files:
+                        atomic_write(
+                            install_dir / support_file.name,
+                            support_file.read_bytes(),
+                        )
                 result["javascript"] = str(device.installed_javascript)
                 for install_dir in device.install_dirs:
                     atomic_write(install_dir / MONITOR_SCRIPT.name, MONITOR_SCRIPT.read_bytes())
@@ -368,6 +394,8 @@ def main() -> int:
             ]
             for device in DEVICES:
                 atomic_write(args.dist / device.javascript.name, device.javascript.read_bytes())
+                for support_file in device.support_files:
+                    atomic_write(args.dist / support_file.name, support_file.read_bytes())
         print(json.dumps({"ok": True, "devices": results}, indent=2))
         return 0
     except (OSError, ValueError) as error:

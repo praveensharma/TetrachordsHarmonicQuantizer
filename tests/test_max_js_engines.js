@@ -12,6 +12,12 @@ function makeContext(sharedGlobals, patcherValues) {
     const emitted = [];
     const named = [];
     const liveSets = [];
+    const liveState = {
+        root_note: 0,
+        scale_name: "Major",
+        scale_mode: 0,
+        scale_intervals: [0, 2, 4, 5, 7, 9, 11]
+    };
 
     function Global(name) {
         if (!sharedGlobals[name]) {
@@ -21,9 +27,24 @@ function makeContext(sharedGlobals, patcherValues) {
         return sharedGlobals[name];
     }
 
-    function LiveAPI() {
+    function LiveAPI(callback) {
+        this.callback = typeof callback === "function" ? callback : null;
         this.set = function set(name, value) {
             liveSets.push([name, value]);
+            liveState[name] = value;
+            if (name === "scale_name") {
+                const intervals = {
+                    Major: [0, 2, 4, 5, 7, 9, 11],
+                    Minor: [0, 2, 3, 5, 7, 8, 10],
+                    Dorian: [0, 2, 3, 5, 7, 9, 10]
+                };
+                if (intervals[value]) {
+                    liveState.scale_intervals = intervals[value].slice();
+                }
+            }
+        };
+        this.get = function get(name) {
+            return liveState[name];
         };
     }
 
@@ -65,10 +86,23 @@ function makeContext(sharedGlobals, patcherValues) {
     }
 
     vm.createContext(context);
-    return { context, emitted, named, liveSets };
+    return { context, emitted, named, liveSets, liveState };
 }
 
 function loadScript(relativePath, harness) {
+    if (relativePath ===
+        "Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js") {
+        ["Tetrachords_Harmony_Receiver/live_scale_matcher.js",
+         "Tetrachords_Harmony_Receiver/live_scale_bridge.js"].forEach((dependency) => {
+            const dependencySource = fs.readFileSync(
+                path.join(__dirname, "..", dependency),
+                "utf8"
+            );
+            vm.runInContext(dependencySource, harness.context, {
+                filename: dependency
+            });
+        });
+    }
     const source = fs.readFileSync(
         path.join(__dirname, "..", relativePath),
         "utf8"
@@ -132,13 +166,12 @@ assert.deepStrictEqual(
         0, 2, 3, 5, 7, 9, 10
     ]
 );
-assert.deepStrictEqual(
-    receiver.liveSets.slice(-3),
-    [
-        ["scale_mode", 1],
-        ["root_note", 0],
-        ["scale_name", "Dorian"]
-    ]
+assert.strictEqual(receiver.liveState.root_note, 0);
+assert.strictEqual(receiver.liveState.scale_name, "Dorian");
+assert.strictEqual(receiver.liveState.scale_mode, 1);
+assert.strictEqual(
+    sharedGlobals.tetrachords_harmony_v1.liveScaleMatchType,
+    "exact"
 );
 
 // The same Tetrachords input also carries the exact active chord. Capture a
@@ -295,6 +328,32 @@ assert.deepStrictEqual(
 assert.strictEqual(sharedGlobals.tetrachords_harmony_v1.validNoteSource, "midi");
 assert.strictEqual(receiver.context.comparison_label(), " • EXACT RAW MATCH");
 
+// The selected MIDI Note Field, not the simultaneously available SysEx
+// intervals, is the source projected to Live Current Scale.
+[60, 62, 63, 65, 67, 68, 70, 72].forEach((note) => {
+    receiver.context.msg_int(0x92);
+    receiver.context.msg_int(note);
+    receiver.context.msg_int(100);
+});
+receiver.context.flushvalidnotes();
+assert.strictEqual(receiver.liveState.scale_name, "Minor");
+assert.strictEqual(
+    sharedGlobals.tetrachords_harmony_v1.liveScaleMatchType,
+    "exact"
+);
+assert.strictEqual(
+    sharedGlobals.tetrachords_harmony_v1.validNoteSource,
+    "midi"
+);
+
+// Restore the Dorian field for the remaining lifecycle assertions.
+[60, 62, 63, 65, 67, 69, 70, 72].forEach((note) => {
+    receiver.context.msg_int(0x92);
+    receiver.context.msg_int(note);
+    receiver.context.msg_int(100);
+});
+receiver.context.flushvalidnotes();
+
 // Each new Note On burst completely replaces the previous field. Note Offs
 // never change the committed collection.
 receiver.context.msg_int(0x82);
@@ -395,7 +454,9 @@ const restoredQuantizer = makeContext(sharedGlobals, {
     continuity: 72,
     register_mode: 1,
     register_low: 48,
-    register_high: 64
+    register_high: 64,
+    input_behavior: 1,
+    input_stability: 35
 });
 loadScript(
     "Harmonic_Quantizer/harmonic_quantizer.js",
@@ -410,6 +471,8 @@ assert.strictEqual(restoredQuantizer.context.continuityAmount, 72);
 assert.strictEqual(restoredQuantizer.context.registerMode, "free");
 assert.strictEqual(restoredQuantizer.context.registerLow, 48);
 assert.strictEqual(restoredQuantizer.context.registerHigh, 64);
+assert.strictEqual(restoredQuantizer.context.inputBehavior, "hold");
+assert.strictEqual(restoredQuantizer.context.inputStabilityMs, 35);
 
 // Presentation labels normalize to the established internal mode names.
 [
@@ -684,6 +747,70 @@ assert.strictEqual(quantizer.context.harmonyVersion, timingBaseVersion + 1);
 quantizer.context.msg_int(0xF8);
 assert.strictEqual(quantizer.context.harmonyVersion, timingBaseVersion + 2);
 
+// Hold Last Pitch turns short gestural notes into one continuously defined
+// pitch per channel. Source Note Offs are ignored; the next Note On safely
+// releases and replaces the previous quantized output.
+const holdQuantizer = makeContext(sharedGlobals);
+loadScript(
+    "Harmonic_Quantizer/harmonic_quantizer.js",
+    holdQuantizer
+);
+holdQuantizer.context.init();
+holdQuantizer.context.inlet = 0;
+holdQuantizer.context.mode("scale-nearest");
+holdQuantizer.context.registermode("free");
+holdQuantizer.context.timing("immediate");
+holdQuantizer.context.apply_valid_notes([
+    1000, 0, "sysex", 0, 2, 4, 5, 7, 9, 11
+]);
+holdQuantizer.context.inputbehavior("hold-last-pitch");
+holdQuantizer.context.stability(0);
+holdQuantizer.emitted.length = 0;
+holdQuantizer.context.handle_note_on(1, 61, 100);
+holdQuantizer.context.handle_note_off(1, 61, 0);
+holdQuantizer.context.handle_note_on(1, 64, 90);
+assert.deepStrictEqual(
+    holdQuantizer.emitted
+        .filter((message) => message[0] === 0)
+        .map((message) => message[1]),
+    [0x90, 62, 100, 0x80, 62, 0, 0x90, 64, 90]
+);
+assert.strictEqual(holdQuantizer.context.heldNotes[1].input, 64);
+assert.strictEqual(holdQuantizer.context.heldNotes[1].output, 64);
+
+// Repeating the same pitch still retriggers cleanly, and Settle keeps only the
+// newest candidate when a gesture flutters across an adjacent boundary.
+holdQuantizer.emitted.length = 0;
+holdQuantizer.context.handle_note_on(1, 64, 80);
+assert.deepStrictEqual(
+    holdQuantizer.emitted
+        .filter((message) => message[0] === 0)
+        .map((message) => message[1]),
+    [0x80, 64, 0, 0x90, 64, 80]
+);
+holdQuantizer.context.stability(20);
+holdQuantizer.emitted.length = 0;
+holdQuantizer.context.handle_note_on(2, 61, 75);
+holdQuantizer.context.handle_note_off(2, 61, 0);
+holdQuantizer.context.handle_note_on(2, 63, 85);
+assert.deepStrictEqual(
+    holdQuantizer.emitted.filter((message) => message[0] === 0),
+    []
+);
+holdQuantizer.context.input_stability_flush(true);
+assert.deepStrictEqual(
+    holdQuantizer.emitted
+        .filter((message) => message[0] === 0)
+        .map((message) => message[1]),
+    [0x91, 64, 85]
+);
+holdQuantizer.context.inputbehavior("follow-gate");
+assert.strictEqual(Object.keys(holdQuantizer.context.heldNotes).length, 0);
+assert.strictEqual(
+    Object.keys(holdQuantizer.context.outputNoteRefCounts).length,
+    0
+);
+
 // Live must restore per-device settings. Presentation controls are registered
 // parameters with initial values, and no loadmess is allowed to overwrite the
 // state stored in an Ableton Set.
@@ -728,7 +855,9 @@ function hasPatchline(patch, sourceId, destinationId) {
     "obj-continuity-number",
     "obj-register-mode-menu",
     "obj-low-number",
-    "obj-high-number"
+    "obj-high-number",
+    "obj-input-behavior-menu",
+    "obj-input-stability-number"
 ].forEach((id) => {
     assert.strictEqual(patchBox(quantizerPatch, id).parameter_enable, 1);
     assert.ok(
@@ -786,6 +915,29 @@ assert.deepStrictEqual(
     patchBox(quantizerPatch, "obj-continuity-number")
         .saved_attribute_attributes.valueof.parameter_initial,
     [60]
+);
+assert.deepStrictEqual(
+    patchBox(quantizerPatch, "obj-input-behavior-menu")
+        .saved_attribute_attributes.valueof.parameter_enum,
+    ["Follow Gate", "Hold Last Pitch"]
+);
+assert.deepStrictEqual(
+    patchBox(quantizerPatch, "obj-input-behavior-menu")
+        .saved_attribute_attributes.valueof.parameter_initial,
+    [0]
+);
+assert.strictEqual(
+    patchBox(quantizerPatch, "obj-input-stability-number").minimum,
+    0
+);
+assert.strictEqual(
+    patchBox(quantizerPatch, "obj-input-stability-number").maximum,
+    100
+);
+assert.deepStrictEqual(
+    patchBox(quantizerPatch, "obj-input-stability-number")
+        .saved_attribute_attributes.valueof.parameter_initial,
+    [20]
 );
 assert.ok(
     hasPatchline(

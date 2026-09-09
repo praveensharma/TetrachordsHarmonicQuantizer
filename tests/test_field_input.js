@@ -5,9 +5,12 @@ function context(file,controls={}){
  function Global(n){return globals[n]||(globals[n]={});}
  function Task(fn,owner){this.fn=fn;this.owner=owner;this.schedule=ms=>{this.due=now+ms;timers.add(this);};this.cancel=()=>timers.delete(this);}
  const output=[],c=vm.createContext({Global,Task,Date:class extends Date{constructor(){super(now);}},
-  LiveAPI:function(){this.set=()=>{};},arrayfromargs:a=>Array.from(a),outlet:(...args)=>output.push(args),
+  LiveAPI:function(){this.set=()=>{};this.get=()=>null;},arrayfromargs:a=>Array.from(a),outlet:(...args)=>output.push(args),
   messnamed(bus,selector,payload){if(bus==='tetrachords_note_field_v1'&&receiver)receiver.fieldpacket(payload);},
   patcher:{getnamed:n=>n in controls?{getvalueof:()=>controls[n]}:null}});
+ if(file==='Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js'){
+  for(const dep of ['live_scale_matcher.js','live_scale_bridge.js'])vm.runInContext(fs.readFileSync(path.join(root,'Tetrachords_Harmony_Receiver',dep),'utf8'),c);
+ }
  vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c);return c;
 }
 const input=context('Note_Field_Input/note_field_input.js');

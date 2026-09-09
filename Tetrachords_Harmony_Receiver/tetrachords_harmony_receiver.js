@@ -18,6 +18,15 @@ autowatch = 1;
 inlets = 1;
 outlets = 5;
 
+if (typeof TetrachordsLiveScaleMatcher === "undefined" &&
+    typeof include !== "undefined") {
+    include("live_scale_matcher.js");
+}
+if (typeof TetrachordsLiveScaleBridge === "undefined" &&
+    typeof include !== "undefined") {
+    include("live_scale_bridge.js");
+}
+
 var GLOBAL_NAME = "tetrachords_harmony_v1";
 var BUS_NAME = "tetrachords_harmony_bus_v1";
 var harmonyGlobal = new Global(GLOBAL_NAME);
@@ -36,9 +45,13 @@ function fieldpacket(raw) {
 }
 function restore_external_field(){if(validNoteCaptureChannel===17&&fieldTransport.snapshot){fieldpacket(fieldTransport.snapshot);}}
 
-var song = null;
 var ready = false;
-var updateLiveUI = 1;
+var liveScaleSyncMode = "current";
+var liveScaleMatcher = null;
+var liveScaleBridge = null;
+var liveScaleSyncTask = null;
+var pendingLiveScaleState = null;
+var liveScaleCoalesceMs = 30;
 var sysexBuffer = [];
 var version = 0;
 var chordVersion = 0;
@@ -115,7 +128,12 @@ function init() {
     try {
         reset_runtime_trace("event\tdetails");
         restore_controls_from_patcher();
-        song = new LiveAPI("live_set");
+        liveScaleMatcher = new TetrachordsLiveScaleMatcher();
+        liveScaleBridge = new TetrachordsLiveScaleBridge(
+            LiveAPI,
+            handle_live_scale_bridge_event
+        );
+        harmonyGlobal.liveScaleCapabilities = liveScaleBridge.init();
         ready = true;
         restore_valid_note_snapshots();
         restore_external_field();
@@ -123,7 +141,7 @@ function init() {
         status("Ready — waiting for Tetrachords SysEx");
         update_valid_note_monitors();
     } catch (error) {
-        song = null;
+        liveScaleBridge = null;
         ready = false;
         status("LiveAPI init failed: " + error);
     }
@@ -161,11 +179,23 @@ function restore_controls_from_patcher() {
     }
     harmonyGlobal.validNoteCaptureChannel = validNoteCaptureChannel;
 
+    value = patcher_control_value("live_scale_sync");
+    if (value !== null) {
+        liveScaleSyncMode = menu_choice(
+            value,
+            ["off", "current"],
+            liveScaleSyncMode,
+            { "current scale": "current" }
+        );
+    }
+    harmonyGlobal.liveScaleSyncMode = liveScaleSyncMode;
+
     runtime_trace(
         "RESTORE_CONTROLS\tsource=" + validNoteSource +
         " chordCh=" + chordCaptureChannel +
         " fieldCh=" + validNoteCaptureChannel +
-        " hold=" + chordHoldMode
+        " hold=" + chordHoldMode +
+        " liveScale=" + liveScaleSyncMode
     );
 }
 
@@ -339,8 +369,26 @@ function chordhold(value) {
 }
 
 function updatelive(v) {
-    updateLiveUI = (v | 0) ? 1 : 0;
-    status("Update Live scale/root: " + (updateLiveUI ? "on" : "off"));
+    livescalesync((v | 0) ? "current" : "off");
+}
+
+function livescalesync(value) {
+    liveScaleSyncMode = menu_choice(
+        value,
+        ["off", "current"],
+        liveScaleSyncMode,
+        { "current scale": "current", "on": "current" }
+    );
+    harmonyGlobal.liveScaleSyncMode = liveScaleSyncMode;
+    if (liveScaleSyncMode === "current") {
+        schedule_live_scale_sync(current_harmonic_state(), "enabled");
+    } else {
+        harmonyGlobal.liveScaleSyncStatus = "off";
+    }
+    status(
+        "Live Scale Sync: " +
+        (liveScaleSyncMode === "current" ? "Current Scale" : "Off")
+    );
 }
 
 function rebroadcast() {
@@ -369,9 +417,9 @@ function refresh() {
 
 function live(value) {
     if (value === "on" || value === 1 || value === "1") {
-        updatelive(1);
+        livescalesync("current");
     } else if (value === "off" || value === 0 || value === "0") {
-        updatelive(0);
+        livescalesync("off");
     }
 }
 
@@ -792,24 +840,11 @@ function apply_harmony(root, intervals, scaleName, track, rootMidiNote) {
 
     publish_active_valid_notes(0);
 
-    if (ready && updateLiveUI) {
-        try {
-            song.set("scale_mode", 1);
-            song.set("root_note", root);
-            song.set("scale_name", scaleName);
-        } catch (error) {
-            status(
-                "Harmony broadcast, but Live scale UI update failed: " + error
-            );
-            return;
-        }
-    }
-
     status(
         "Legal notes: " +
         pitch_class_names(legalPitchClasses).join(" ") +
         " | root " + NOTE_NAMES[root] +
-        " | Live label " + scaleName
+        " | SysEx label " + scaleName
     );
 }
 
@@ -856,6 +891,7 @@ function publish_active_valid_notes(force) {
     broadcast_harmony(message);
     outlet(1, message);
     update_valid_note_monitors();
+    schedule_live_scale_sync(current_harmonic_state(), "active-valid-notes");
 
     if (validNoteSource === "midi" && activeMidiNotes.length === 0) {
         status("MIDI Note Field selected — waiting for a note collection");
@@ -865,6 +901,96 @@ function publish_active_valid_notes(force) {
             midi_note_names(activeMidiNotes)
         );
     }
+}
+
+function current_harmonic_state() {
+    var rootAvailable = typeof harmonyGlobal.root !== "undefined";
+    return {
+        rootPitchClass: rootAvailable
+            ? positive_mod(harmonyGlobal.root | 0, 12) : null,
+        validPitchClasses: harmonyGlobal.activeValidPitchClasses
+            ? Array.prototype.slice.call(harmonyGlobal.activeValidPitchClasses)
+            : [],
+        validMidiNotes: harmonyGlobal.activeValidMidiNotes
+            ? Array.prototype.slice.call(harmonyGlobal.activeValidMidiNotes)
+            : [],
+        source: validNoteSource === "midi" ? "valid_note_channel" : "sysex",
+        sysexVersion: version,
+        midiFieldVersion: validMidiVersion,
+        activeValidVersion: activeValidVersion
+    };
+}
+
+function schedule_live_scale_sync(state, reason) {
+    if (!ready || liveScaleSyncMode !== "current" || !liveScaleBridge ||
+        !liveScaleMatcher) {
+        return;
+    }
+    pendingLiveScaleState = { state: state, reason: reason };
+    if (typeof Task === "undefined") {
+        perform_live_scale_sync();
+        return;
+    }
+    if (liveScaleSyncTask) {
+        liveScaleSyncTask.cancel();
+    }
+    liveScaleSyncTask = new Task(perform_live_scale_sync, this);
+    liveScaleSyncTask.schedule(liveScaleCoalesceMs);
+}
+
+function perform_live_scale_sync() {
+    var pending = pendingLiveScaleState;
+    var match;
+    var result;
+    liveScaleSyncTask = null;
+    pendingLiveScaleState = null;
+    if (!pending || liveScaleSyncMode !== "current" || !liveScaleBridge) {
+        return;
+    }
+    match = liveScaleMatcher.match(pending.state);
+    harmonyGlobal.liveScaleMatch = match;
+    harmonyGlobal.liveScaleMatchType = match.matchType;
+    harmonyGlobal.liveScaleName = match.scaleName;
+    harmonyGlobal.liveScaleRoot = match.rootNote;
+    harmonyGlobal.liveScaleMissingPitchClasses =
+        match.missingPitchClasses.slice(0);
+    harmonyGlobal.liveScaleExtraPitchClasses = match.extraPitchClasses.slice(0);
+    harmonyGlobal.liveScaleLibraryVersion = LIVE_SCALE_LIBRARY_VERSION;
+    harmonyGlobal.liveScaleBridgeVersion = LIVE_SCALE_BRIDGE_VERSION;
+    try {
+        result = liveScaleBridge.setCurrentScale(match);
+        harmonyGlobal.liveScaleWriteResult = result;
+        harmonyGlobal.liveScaleSyncStatus = result.skipped
+            ? "skipped" : (result.verified ? "success" : "unverified");
+        runtime_trace(
+            "LIVE_SCALE\treason=" + pending.reason +
+            " source=" + pending.state.source +
+            " match=" + match.matchType +
+            " root=" + match.rootNote +
+            " scale=" + match.scaleName +
+            " missing=" + match.missingPitchClasses.join(",") +
+            " extra=" + match.extraPitchClasses.join(",") +
+            " status=" + harmonyGlobal.liveScaleSyncStatus
+        );
+    } catch (error) {
+        harmonyGlobal.liveScaleSyncStatus = "failed";
+        harmonyGlobal.liveScaleSyncError = String(error);
+        runtime_trace("LIVE_SCALE_ERROR\t" + error);
+        status("Harmony active; Live Current Scale sync failed: " + error);
+    }
+}
+
+function handle_live_scale_bridge_event(event) {
+    if (!event) {
+        return;
+    }
+    if (event.type === "observed") {
+        harmonyGlobal.observedLiveScale = event.state;
+    } else if (event.type === "warning") {
+        harmonyGlobal.liveScaleBridgeWarning = event.warning;
+    }
+    // Live observations are deliberately not fed into receiver state. This
+    // makes Tetrachords authoritative and structurally prevents feedback.
 }
 
 function update_valid_note_monitors() {

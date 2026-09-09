@@ -1,6 +1,6 @@
 # Tetrachords Harmonic Quantizer and Chord Tools
 
-This package contains two Max for Live MIDI effects:
+This package contains three Max for Live MIDI effects:
 
 1. **Tetrachords Harmony Receiver** — parses the 17-byte SysEx message,
    captures the active chord's MIDI notes, optionally captures an authoritative
@@ -8,6 +8,8 @@ This package contains two Max for Live MIDI effects:
 2. **Harmonic Quantizer** — processes any MIDI source against the selected
    Tetrachords pitch collection or exact active chord, preserves each input
    channel, and sends the result to the selected Live MIDI output.
+3. **Tetrachords Note Field Input** — captures the optional dedicated
+   Tetrachords MIDI note-field track and forwards atomic bursts to the receiver.
 
 No `All Ins` routing is required.
 
@@ -17,6 +19,12 @@ No `All Ins` routing is required.
 Tetrachords_Harmony_Receiver/
   Tetrachords Harmony Receiver.maxpat
   tetrachords_harmony_receiver.js
+  live_scale_matcher.js
+  live_scale_bridge.js
+
+Note_Field_Input/
+  Tetrachords Note Field Input.maxpat
+  note_field_input.js
 
 Harmonic_Quantizer/
   Harmonic Quantizer.maxpat
@@ -27,6 +35,7 @@ dist/
   Harmonic Quantizer.amxd
 
 tests/
+  test_live_scale_sync.js
   test_quantizer_logic.js
   test_max_js_engines.js
 ```
@@ -96,7 +105,7 @@ MIDI To:    No Output
 Changing a Tetrachords chord state should update the device status to:
 
 ```text
-Legal notes: ... | root ... | Live label ...
+Legal notes: ... | root ... | SysEx label ...
 ```
 
 The receiver expects exactly:
@@ -105,9 +114,12 @@ The receiver expects exactly:
 F0 77 01 40 01 [8 interval bytes] [root] [mode] [track] F7
 ```
 
-The eight interval bytes are authoritative. The `mode` byte is used only as a
-fallback label when updating Live's scale UI. The octave duplicate in the eight
-intervals is removed when building the pitch-class set.
+The eight interval bytes are authoritative only when **Valid Notes** is set to
+**SysEx Intervals**. The `mode` byte remains a fallback label for legacy/debug
+display. When **MIDI Note Field** is selected, that independently captured
+collection is authoritative and may intentionally differ from SysEx. The raw
+MIDI collection retains register and duplicate pitch classes; algorithms that
+need pitch classes derive them downstream.
 
 For an A/B comparison, Tetrachords may also send a collection of simultaneous
 Note Ons on a dedicated channel. Use the separate input track below, then switch
@@ -139,6 +151,32 @@ Note Offs. Only the receiver publishes harmonic state. The field device uses
 a separate mailbox so it can load before the receiver without losing its last
 completed collection; that collection is retained if the helper is disabled.
 An oversized burst is discarded, never partially committed.
+
+### Ableton Live Current Scale sync
+
+The receiver's visible **Live Scale** menu has two persisted choices:
+
+- **Off** leaves Live's Current Scale untouched.
+- **Current Scale** maps the currently selected valid-note source to the closest
+  scale that Live can represent, then writes Song root, scale name and scale
+  mode. This is the default, matching the receiver's previous automatic update.
+
+This mapping is only a projection for Live-native scale-aware devices. The
+Harmonic Quantizer always keeps using the exact active Tetrachords pitch
+collection. An eight-note MIDI field therefore stays eight-note even when Live
+can express it only as a seven-note approximation.
+
+The receiver holds the SysEx root stable while matching either valid-note
+source. It reports **EXACT**, **APPROXIMATE**, or **NONE** on the Monitor page,
+including notes omitted from or added by the Live projection. Writes are
+coalesced for 30 ms, repeated identical states are skipped, and a read-back of
+`root_note`, `scale_name`, `scale_mode`, and `scale_intervals` verifies the
+result. Live observations are diagnostics only and never feed back into the
+canonical Tetrachords state.
+
+Developer diagnostics live in `tools/Live Scale API Probe.maxpat`. Run it from
+Live's bundled Max to probe Song and selected-clip read/write/observe behavior
+against the installed beta without deliberately changing values.
 
 Select **Separate track** explicitly in existing saved receiver instances;
 fresh devices default to it. Numeric Field input options remain legacy local
@@ -183,6 +221,24 @@ Channel:    selected in Live
 Use any source MIDI channels you need. The device processes every incoming note
 and preserves its source channel; Live's MIDI To channel selection determines
 the destination channel.
+
+### Input behavior for gestural pitch sources
+
+**Input** controls how the quantizer treats the source note lifecycle:
+
+- **Follow Gate** preserves every incoming Note On and Note Off. Use this for
+  keyboards, sequencers and sources whose MIDI notes also articulate the sound.
+- **Hold Last Pitch** keeps one quantized output note active per MIDI channel.
+  Incoming Note Offs are ignored; the next Note On safely releases and replaces
+  the previous output. Use this when a gestural MIDI source supplies pitch while
+  separate hardware triggers or envelopes articulate the sound.
+
+In Hold Last Pitch, **Settle** waits 0–100 ms before adopting a new source pitch.
+The default 20 ms suppresses brief adjacent-note flutter at gesture boundaries;
+repeated reports of the same pitch confirm it rather than restarting the timer.
+Set Settle to 0 ms for immediate pitch changes. Follow Gate never applies this
+delay. Switching input behaviors or using Panic releases all device-managed held
+notes so mode changes cannot leave stuck notes.
 
 ### Chord Map mode
 

@@ -17,7 +17,9 @@ function list(v){return v ? Array.prototype.slice.call(v) : [];}
 function tick(){
     var d=list(harmony.derivedValidPitchClasses),f=list(harmony.midiFieldPitchClasses||harmony.tetrachordsValidPitchClasses);
     var rd=list(harmony.derivedValidMidiNotes),rf=list(harmony.midiFieldNotes||harmony.tetrachordsValidMidiNotes);
-    var sig=JSON.stringify([d,f,rd,rf]);
+    var sig=JSON.stringify([d,f,rd,rf,harmony.liveScaleSyncMode,harmony.liveScaleMatchType,
+        harmony.liveScaleName,harmony.liveScaleRoot,harmony.liveScaleSyncStatus,
+        list(harmony.liveScaleMissingPitchClasses),list(harmony.liveScaleExtraPitchClasses)]);
     if(sig!==comparison){comparison=sig;derived=d;field=f;rawDerived=rd;rawField=rf;dirty=true;}
     if(dirty){mgraphics.redraw();dirty=false;}
 }
@@ -56,6 +58,19 @@ function match(){
     var a=derived.slice().sort().join(','),b=field.slice().sort().join(',');
     return a===b?'Same pitch classes (register may differ)':'Different pitch classes — amber marks mismatches';
 }
+function liveScaleSummary(){
+    var mode=harmony.liveScaleSyncMode||'off';
+    if(mode==='off'){return 'Live Current Scale: Off';}
+    var kind=String(harmony.liveScaleMatchType||'waiting').toUpperCase();
+    var scale=harmony.liveScaleName||'waiting for harmonic state';
+    var root=typeof harmony.liveScaleRoot==='number'?names[pc(harmony.liveScaleRoot)]+' ':'';
+    var state=harmony.liveScaleSyncStatus||'waiting';
+    var missing=list(harmony.liveScaleMissingPitchClasses),extra=list(harmony.liveScaleExtraPitchClasses);
+    var differences='';
+    if(missing.length){differences+=' · misses '+missing.map(function(v){return names[pc(v)];}).join(' ');}
+    if(extra.length){differences+=' · adds '+extra.map(function(v){return names[pc(v)];}).join(' ');}
+    return 'Live: '+root+scale+' · '+kind+' · '+state+differences;
+}
 function trace(x,y,w,h){
     if(!history.length){text(x,y+20,'Waiting for emitted MIDI notes',muted);return;}
     var low=127,high=0;
@@ -83,7 +98,7 @@ function paint(){
         text(470,14,rawDerived.length?rawDerived.map(note).join(' '):'Waiting for SysEx',fg,10);
         text(0,42,'MIDI field',muted);strip(90,30,360,field,rawDerived.length?derived:null,false);
         text(470,44,rawField.length?rawField.map(note).join(' '):'Waiting for MIDI field',fg,10);
-        text(0,75,match(),amber);text(0,94,'Raw notes retain octaves · C4 = MIDI 60 · no source synchronization assumed',muted,10);
+        text(0,75,match(),amber);text(0,94,liveScaleSummary(),muted,10);
     }else{
         text(0,12,'SysEx',muted,10);strip(66,0,270,derived,rawField.length?field:null,false);
         text(0,39,'MIDI',muted,10);strip(66,27,270,field,rawDerived.length?derived:null,false);

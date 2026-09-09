@@ -107,6 +107,117 @@
       },
       {
         "box": {
+          "id": "obj-live-scale-label",
+          "maxclass": "comment",
+          "text": "Live Scale",
+          "patching_rect": [
+            20.0,
+            470.0,
+            70.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            10,
+            70,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "varname": "obj-live-scale-label"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-live-scale-menu",
+          "maxclass": "umenu",
+          "items": [
+            "Off",
+            ",",
+            "Current Scale"
+          ],
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            100.0,
+            470.0,
+            150.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            405,
+            7,
+            185,
+            23
+          ],
+          "parameter_enable": 1,
+          "varname": "live_scale_sync",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Live Scale Sync",
+              "parameter_shortname": "Live Scale",
+              "parameter_type": 2,
+              "parameter_mmax": 1,
+              "parameter_enum": [
+                "Off",
+                "Current Scale"
+              ],
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                1
+              ]
+            }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Project the active Tetrachords valid-note source into Ableton Live's Current Scale."
+        }
+      },
+      {
+        "box": {
+          "id": "obj-live-scale-prepend",
+          "maxclass": "newobj",
+          "text": "prepend livescalesync",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            265.0,
+            470.0,
+            155.0,
+            22.0
+          ]
+        }
+      },
+      {
+        "box": {
           "id": "obj-js",
           "maxclass": "newobj",
           "text": "js tetrachords_harmony_receiver.js",
@@ -1199,6 +1310,30 @@
       }
     ],
     "lines": [
+      {
+        "patchline": {
+          "source": [
+            "obj-live-scale-menu",
+            1
+          ],
+          "destination": [
+            "obj-live-scale-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-live-scale-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
       {
         "patchline": {
           "source": [

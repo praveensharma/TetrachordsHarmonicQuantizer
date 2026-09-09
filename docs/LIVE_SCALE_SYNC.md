@@ -23,6 +23,15 @@ octaves, order and duplicate pitch classes remain available in shared state.
 
 Target inspected: Ableton Live 12 Beta 12.4.15b1 with bundled Max 9.1.5.
 
+Runtime smoke test completed in that build on 2026-09-08 with the receiver's
+active source set to **MIDI Note Field**. Incoming eight-note bursts committed
+atomically, normalized to seven pitch classes where the octave duplicate was
+present, and alternated Live's Current Scale between **F Major** and
+**F Dorian**. The receiver's write/read-back verification returned `success`
+for changed states. Repeated identical collections returned `skipped`, showing
+that the hot path avoids redundant LOM writes. The exact raw MIDI-note
+collections remained the custom quantizer input throughout this test.
+
 The current Song LOM documents `root_note`, `scale_name`, and `scale_mode` as
 read/write/observe and `scale_intervals` as read/observe. The installed beta's
 `_MxDCore/LomTypes.pyc` exposes all four names for both Song and Clip. Runtime
@@ -31,10 +40,10 @@ probe because the public Clip documentation lags the beta.
 
 | Property | Song | MIDI clip | Audio clip |
 |---|---|---|---|
-| `root_note` | R/W/O documented | exposed; runtime probe pending | exposed; runtime probe pending |
-| `scale_name` | R/W/O documented | exposed; runtime probe pending | exposed; runtime probe pending |
-| `scale_mode` | R/W/O documented | exposed; runtime probe pending | exposed; runtime probe pending |
-| `scale_intervals` | R/O documented | exposed; runtime probe pending | exposed; runtime probe pending |
+| `root_note` | R/O runtime; W documented | exposed; runtime probe pending | exposed; runtime probe pending |
+| `scale_name` | R/W runtime; O initialized | exposed; runtime probe pending | exposed; runtime probe pending |
+| `scale_mode` | R runtime at `1`; W/O documented | exposed; runtime probe pending | exposed; runtime probe pending |
+| `scale_intervals` | R runtime; O initialized | exposed; runtime probe pending | exposed; runtime probe pending |
 
 Use `tools/Live Scale API Probe.maxpat` inside Live's bundled Max. It reads each
 property, writes back the same value to test writability, attaches observers,
@@ -62,4 +71,3 @@ properties, but public documentation and precedence behavior are not yet stable
 enough to stamp clips automatically. Revisit after the runtime probe confirms
 MIDI/audio capability and a controlled test documents Song versus selected and
 playing clip behavior.
-

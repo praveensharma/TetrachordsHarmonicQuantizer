@@ -146,7 +146,7 @@ function ensemble_write(state) {
 function ensemble_group(state) {
     var key = String(ensembleGroup);
     if (!state[key]) {
-        state[key] = {epoch: 0, members: {}, pending: [], results: {}, deadline: 0};
+        state[key] = {epoch: 0, members: {}, pending: [], results: {}, deadline: 0, priority: 1};
     }
     return state[key];
 }
@@ -180,7 +180,7 @@ function ensemble_refresh() {
         lastVoiceDecision = {};
         ensembleEpoch = group.epoch;
     }
-    var member = group.members[traceInstance] || {part: ensemblePart, note: null};
+    var member = group.members[traceInstance] || {part: ensemblePart, note: null, active: []};
     member.seen = now;
     member.part = ensemblePart;
     group.members[traceInstance] = member;
@@ -247,26 +247,42 @@ function resetensemble() {
     var group = ensemble_group(state);
     ensemble_resolve(group);
     group.epoch++;
-    for (var id in group.members) { group.members[id].note = null; }
+    for (var id in group.members) { group.members[id].note = null; group.members[id].active = []; }
     ensemble_write(state);
     ensemble_refresh();
 }
 
-function ensemble_options(base, input) {
+function ensemble_options(base, input, channel) {
     var pcs = (quantizerMode === "harmonizer" || quantizerMode === "chordnearest") &&
         activeChordNotes.length ? active_chord_pitch_classes() : legalPitchClasses;
-    var result = [{note: base, cost: 0}];
+    var result = [{note: base, cost: ensemble_candidate_cost(base, input, channel)}];
     if (!pcs.length || !separationAmount) { return result; }
     // A bounded soft preference: never leap more than six semitones simply to
     // avoid another part. Octave doubling remains allowed in this first version.
     for (var n = Math.max(0, base - 6); n <= Math.min(127, base + 6); n++) {
         if (n === base || pcs.indexOf(n % 12) < 0) { continue; }
-        if (registerMode === "limited" && (n > registerHigh || n < Math.min(base, registerLow))) { continue; }
+        if (registerMode === "limited" && (n > registerHigh || n < registerLow)) { continue; }
         if (quantizerMode === "up" && n < input) { continue; }
         if (quantizerMode === "down" && n > input) { continue; }
-        result.push({note: n, cost: (n - base) * (n - base)});
+        result.push({note: n, cost: ensemble_candidate_cost(n, input, channel)});
     }
     return result;
+}
+
+function ensemble_candidate_cost(candidate, input, channel) {
+    var prior = voiceState[channel] || null;
+    var inputDistance = Math.abs(candidate - input);
+    var score = inputDistance * inputDistance;
+    if (quantizerMode !== "statefulnearest" || !prior || continuityAmount === 0) {
+        return score;
+    }
+    var continuity = continuityAmount / 100;
+    var previousDistance = Math.abs(candidate - prior.output);
+    score += 3 * continuity * previousDistance * previousDistance;
+    if (prior.version !== harmonyVersion && candidate === prior.output && is_legal_note(candidate)) {
+        score -= 64 * continuity;
+    }
+    return score;
 }
 
 function ensemble_enqueue(channel, input, velocity, base) {
@@ -274,7 +290,7 @@ function ensemble_enqueue(channel, input, velocity, base) {
     var group = ensemble_group(state);
     var id = traceInstance + ":" + (++ensembleSerial);
     group.pending.push({id: id, owner: traceInstance, part: ensemblePart,
-        options: ensemble_options(base, input), separation: separationAmount,
+        options: ensemble_options(base, input, channel), separation: separationAmount,
         upward: preferUpwardTie, serial: ensembleSerial});
     if (!group.deadline) { group.deadline = new Date().getTime() + ENSEMBLE_WINDOW_MS; }
     ensemble_write(state);
@@ -295,21 +311,28 @@ function ensemble_resolve(group) {
     for (id in group.members) {
         var member = group.members[id];
         counts[member.part] = (counts[member.part] || 0) + 1;
-        occupied[id] = member.note;
+        occupied[id] = member.active && member.active.length ? member.active.slice(0) : [];
     }
-    // Replace stale assignments for all parts participating in this batch.
-    for (var i = 0; i < jobs.length; i++) { delete occupied[jobs[i].owner]; }
-    jobs.sort(function (a, b) { return a.part - b.part || a.serial - b.serial; });
+    var priority = clamp(group.priority || 1, 1, 4);
+    var i;
+    jobs.sort(function (a, b) {
+        var ar=(a.part-priority+4)%4,br=(b.part-priority+4)%4;
+        return ar-br || a.serial-b.serial;
+    });
     for (i = 0; i < jobs.length; i++) {
         var job = jobs[i];
         var best = job.options[0].note;
         var bestCost = Infinity;
+        var baseCollision = false;
         for (var j = 0; j < job.options.length; j++) {
             var option = job.options[j];
             var cost = option.cost;
             if (counts[job.part] === 1) {
                 for (id in occupied) {
-                    if (id !== job.owner && occupied[id] === option.note) { cost += 36 * job.separation / 100; }
+                    if (id !== job.owner && occupied[id].indexOf(option.note) >= 0) {
+                        cost += 36 * job.separation / 100;
+                        if (j === 0) { baseCollision = true; }
+                    }
                 }
             } else if (j > 0) { continue; } // Duplicate part IDs: transparent, visible conflict.
             if (cost < bestCost || (cost === bestCost &&
@@ -319,12 +342,30 @@ function ensemble_resolve(group) {
             }
         }
         if (!group.results[job.owner]) { group.results[job.owner] = {}; }
-        group.results[job.owner][job.id] = best;
-        occupied[job.owner] = best;
+        group.results[job.owner][job.id] = {note:best, avoided:baseCollision && best !== job.options[0].note,
+            original:job.options[0].note, cost:bestCost};
+        occupied["planned:"+job.id] = [best];
         if (group.members[job.owner]) { group.members[job.owner].note = best; }
     }
     group.pending = [];
     group.deadline = 0;
+    group.priority = priority % 4 + 1;
+}
+
+function ensemble_active_add(note) {
+    if (!ensembleGroup) { return; }
+    var state=ensemble_read(),group=ensemble_group(state);
+    var member=group.members[traceInstance] || {part:ensemblePart,note:null,active:[]};
+    if (!member.active) { member.active=[]; }
+    member.active.push(note);member.note=note;member.seen=new Date().getTime();
+    group.members[traceInstance]=member;ensemble_write(state);
+}
+function ensemble_active_remove(note) {
+    if (!ensembleGroup) { return; }
+    var state=ensemble_read(),group=ensemble_group(state),member=group.members[traceInstance];
+    if (!member || !member.active) { return; }
+    var index=member.active.indexOf(note);if(index>=0){member.active.splice(index,1);}
+    ensemble_write(state);
 }
 
 function ensemble_tick() { ensemble_flush(false); }
@@ -342,7 +383,14 @@ function ensemble_flush(force) {
         if (event.id && !ready.hasOwnProperty(event.id)) { break; }
         if (!force && new Date().getTime() < event.due) { break; }
         ensembleQueue.shift();
-        if (event.id) { event.output = ready[event.id]; delete ready[event.id]; }
+        if (event.id) {
+            var decision=ready[event.id];event.output=typeof decision === "object" ? decision.note : decision;
+            if (decision && decision.avoided) {
+                runtime_trace("SEPARATION\tpart="+ensemblePart+" avoided="+decision.original+
+                    " chose="+decision.note+" score="+decision.cost);
+            }
+            delete ready[event.id];
+        }
         deliveries.push(event);
     }
     group.results[traceInstance] = ready;
@@ -1083,6 +1131,7 @@ function release_held_note(channel) {
     }
 
     remove_active_mapping(channel, held.input, held.output);
+    ensemble_active_remove(held.output);
     release_output_reference(channel, held.output, 0);
     delete heldNotes[channel];
 }
@@ -1357,7 +1406,7 @@ function process_note_on_now(channel, inputNote, velocity) {
         " velocity=" + velocity + " mode=" + quantizerMode
     );
     outputNote = quantize_note(inputNote, channel, velocity);
-    if (ensembleGroup) {
+    if (ensembleGroup && separationAmount > 0) {
         ensemble_enqueue(channel, inputNote, velocity, outputNote);
         return;
     }
@@ -1381,6 +1430,7 @@ function deliver_note_on(channel, inputNote, velocity, outputNote, remember) {
     }
 
     activeNoteMappings[sourceKey].push(outputNote);
+    ensemble_active_add(outputNote);
 
     if (!outputNoteRefCounts.hasOwnProperty(outputKey)) {
         outputNoteRefCounts[outputKey] = 0;
@@ -1532,7 +1582,7 @@ function handle_note_off(channel, inputNote, velocity) {
         return;
     }
 
-    if (!ensembleDelivering && ensembleGroup) {
+    if (!ensembleDelivering && ensembleGroup && separationAmount > 0) {
         ensembleQueue.push({channel: channel, input: inputNote, velocity: velocity,
             due: new Date().getTime() + ENSEMBLE_WINDOW_MS});
         if (typeof Task !== "undefined") {
@@ -1558,6 +1608,7 @@ function handle_note_off(channel, inputNote, velocity) {
         outputNote = quantize_note(inputNote, channel, 0);
     }
 
+    ensemble_active_remove(outputNote);
     release_output_reference(channel, outputNote, velocity);
 }
 

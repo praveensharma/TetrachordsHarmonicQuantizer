@@ -65,7 +65,8 @@ assert.deepStrictEqual(simultaneous([0,1,2,3]),simultaneous([3,2,1,0]));
     const s=studio(), a=s.device(1,1,0), b=s.device(2,1,0), off=s.device(1,0,100);
     [a,b,off].forEach(p=>p.c.handle_note_on(1,61,90));
     assert.deepStrictEqual(off.notes(),[62]); assert.equal(off.midi[0].time,0);
-    s.advance(4); assert.deepStrictEqual(a.notes(),[62]); assert.deepStrictEqual(b.notes(),[62]);
+    a.c.handle_note_off(1,61,0);assert.equal(a.midi[3].time,0);
+    s.advance(4); assert.deepStrictEqual(a.notes(),[62,62]); assert.deepStrictEqual(b.notes(),[62]);
 }
 // A 1 ms source gate stays 1 ms long after buffering. Note Off releases the
 // exact selected output and does not clear the part's assigned CV pitch.
@@ -96,7 +97,8 @@ assert.deepStrictEqual(simultaneous([0,1,2,3]),simultaneous([3,2,1,0]));
     assert.deepStrictEqual(Object.keys(b.c.voiceState),[]);
     b.c.handle_note_off(1,60,0); s.advance(4); assert.deepStrictEqual(b.notes(),[59,59]);
     [b,a].forEach(p=>p.c.handle_note_on(1,60,100)); s.advance(4);
-    assert.deepStrictEqual(b.notes(),[59,59,59]);
+    // The second coordinated cycle rotates first choice from Voice A to B.
+    assert.deepStrictEqual(b.notes(),[59,59,60]);
 }
 // Register safety and a one-note allowed set never produce an illegal escape.
 {

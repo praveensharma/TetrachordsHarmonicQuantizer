@@ -13,6 +13,9 @@ This package contains three Max for Live MIDI effects:
 
 No `All Ins` routing is required.
 
+See [Voice Separation v2](docs/VOICE_SEPARATION.md) for coordinated scoring,
+active-pitch semantics, and the ROTA integration boundary.
+
 ## Package contents
 
 ```text
@@ -288,32 +291,34 @@ Use one quantizer instance per melodic part. Set **Ensemble** to the same
 number (1–8) on the four tracks and assign unique **Part** numbers 1–4. These
 identities are independent of MIDI channels; Ableton still controls routing.
 Ensemble 0 is Off and retains the original processing without buffering.
-Group, Part and **Separation** are saved Live parameters. Defaults are Off,
-Part 1 and Separation 0% so existing tracks opt in explicitly.
+Group, Part and **Voice Separation** are saved Live parameters. Defaults are
+Off, Part 1 and Voice Separation 0% so existing tracks opt in explicitly.
 
-Each part publishes its last assigned MIDI pitch, including after Note Off.
-This supports CV pitches articulated by separate hardware triggers: the
-monitor displays assigned pitches, not which sounds are currently audible.
+Each part publishes its last assigned MIDI pitch for the monitor and separately
+tracks currently occupied pitches for scoring. In Follow Notes, Note Off removes
+occupancy; Hold Last Pitch retains it until replacement or reset. The monitor
+still displays assigned pitches, not which analog envelopes are currently audible.
 The four-part monitor shows note names and MIDI numbers, flags exact unisons,
 and reports CONFLICT when two devices claim the same Part. Conflicting parts
 keep their normal quantized pitches rather than applying separation.
 
-Separation is a soft preference against exact pitch duplication. At 0%, the
-original quantizer pitch is retained; increasing it favors a nearby allowed
-alternative within six semitones of that pitch. Octave doubling is allowed.
+Voice Separation is a soft preference against exact pitch duplication. At 0%,
+the original independent path is retained without ensemble buffering; increasing
+it favors a nearby allowed alternative within six semitones. Octave doubling is allowed.
 Chord modes choose chord tones; other modes use the active valid collection.
 Register boundaries and directional constraints restrict alternatives. The
-final separated pitch is the one remembered by Stateful Nearest and paired
-with its Note Off. Continuity remains independent on every instance.
+scorer combines input distance, Stateful Nearest continuity/common-tone costs,
+and collision pressure. The final pitch is remembered and paired with its Note
+Off. Continuity remains independent on every instance.
 
-Ensemble-enabled instances collect requests for approximately **4 ms** and
-resolve each batch in **Part 1 → Part 4** order. Participating parts replace
-their old pitch assignments together; idle parts keep theirs. Notes arriving
+Ensemble-enabled instances with Voice Separation above zero collect requests
+for approximately **4 ms** and resolve each batch with first choice rotating
+from **Voice A → D** between cycles. Idle parts' sounding pitches remain
+occupied. Notes arriving
 in the same batch therefore give the same choices regardless of track arrival
 order, provided the harmony, settings and prior state match. Notes outside
-that window form subsequent batches. Very dense notes within one part use
-the pre-delivery quantizer memory; this is intended for four melodic lanes,
-not polyphonic voice allocation within one lane.
+that window form subsequent batches. This is optimized for four monophonic
+melodic lanes rather than polyphonic allocation within one lane.
 
 Note Ons and Note Offs receive the same nominal delay to preserve short gates.
 Max scheduler load can add timing jitter; actual Ableton/hardware latency

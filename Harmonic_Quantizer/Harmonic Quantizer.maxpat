@@ -1778,7 +1778,7 @@
         "box": {
           "id": "obj-separation-label",
           "maxclass": "comment",
-          "text": "Avoid Unison %",
+          "text": "Voice Separation %",
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
@@ -1835,8 +1835,8 @@
           "varname": "ensemble_separation",
           "saved_attribute_attributes": {
             "valueof": {
-              "parameter_longname": "Ensemble Separation",
-              "parameter_shortname": "Ensemble Separation",
+              "parameter_longname": "Voice Separation",
+              "parameter_shortname": "Voice Separation",
               "parameter_type": 3,
               "parameter_mmin": 0,
               "parameter_mmax": 100,

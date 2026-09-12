@@ -1,16 +1,20 @@
-# Tetrachords → OXI Dynamic Quantizer and Chord Harmonizer
+# Tetrachords Harmonic Quantizer and Chord Tools
 
-This package contains two separate Max for Live MIDI effects:
+This package contains three Max for Live MIDI effects:
 
-1. **Tetrachords Harmony Receiver** — listens only to the Tetrachords USB MIDI
-   port, parses the 17-byte SysEx message, captures the active chord's MIDI
-   notes, updates Ableton Live's scale/root UI, and publishes both states.
-2. **OXI Harmonic Quantizer** — listens only to the OXI USB MIDI port, quantizes
-   all incoming MIDI note channels to the current Tetrachords pitch collection
-   or maps them through the exact active chord, preserves each input channel,
-   and sends the result to the selected Live MIDI output.
+1. **Tetrachords Harmony Receiver** — parses the 17-byte SysEx message,
+   captures the active chord's MIDI notes, optionally captures an authoritative
+   MIDI note field of any size, and publishes one selected valid-note source.
+2. **Harmonic Quantizer** — processes any MIDI source against the selected
+   Tetrachords pitch collection or exact active chord, preserves each input
+   channel, and sends the result to the selected Live MIDI output.
+3. **Tetrachords Note Field Input** — captures the optional dedicated
+   Tetrachords MIDI note-field track and forwards atomic bursts to the receiver.
 
 No `All Ins` routing is required.
+
+See [Voice Separation v2](docs/VOICE_SEPARATION.md) for coordinated scoring,
+active-pitch semantics, and the ROTA integration boundary.
 
 ## Package contents
 
@@ -18,16 +22,23 @@ No `All Ins` routing is required.
 Tetrachords_Harmony_Receiver/
   Tetrachords Harmony Receiver.maxpat
   tetrachords_harmony_receiver.js
+  live_scale_matcher.js
+  live_scale_bridge.js
 
-OXI_Harmonic_Quantizer/
-  OXI Harmonic Quantizer.maxpat
-  oxi_harmonic_quantizer.js
+Note_Field_Input/
+  Tetrachords Note Field Input.maxpat
+  note_field_input.js
+
+Harmonic_Quantizer/
+  Harmonic Quantizer.maxpat
+  harmonic_quantizer.js
 
 dist/
   Tetrachords Harmony Receiver.amxd
-  OXI Harmonic Quantizer.amxd
+  Harmonic Quantizer.amxd
 
 tests/
+  test_live_scale_sync.js
   test_quantizer_logic.js
   test_max_js_engines.js
 ```
@@ -53,7 +64,10 @@ JavaScript source in its own Ableton User Library folder, for example:
 User Library/
   Max4Live/
     Tetrachords Harmony Receiver/
-    OXI Harmonic Quantizer/
+    Harmonic Quantizer/
+
+  Presets/MIDI Effects/Max MIDI Effect/Imported/
+    Harmonic Quantizer.amxd
 ```
 
 In Live's browser, open **User Library → Max4Live**, then drag the appropriate
@@ -72,12 +86,12 @@ to edit it.
 In **Live Settings → Link, Tempo & MIDI**:
 
 - Enable **Track Input** for the Tetrachords USB MIDI port.
-- Enable **Track Input** for the OXI USB MIDI port.
+- Enable **Track Input** for the sequencer or controller MIDI port.
 - Enable **Track Output** for the FH-2 MIDI port.
 - `Remote` is not required for this setup.
 
-Avoid any second direct OXI → FH-2 route. The quantizer track should be the only
-path carrying these four OXI channels to the FH-2.
+Avoid a second direct source-to-hardware route. The quantizer track should be
+the only path carrying source notes to the target synth or MIDI/CV converter.
 
 ## Track 1 — Tetrachords receiver
 
@@ -85,7 +99,7 @@ Create a dedicated MIDI track:
 
 ```text
 MIDI From:  Tetrachords USB MIDI
-Channel:    All Channels
+Channel:    Ch. 1 (Tetrachords chord output)
 Monitor:    In
 Device:     Tetrachords Harmony Receiver
 MIDI To:    No Output
@@ -94,7 +108,7 @@ MIDI To:    No Output
 Changing a Tetrachords chord state should update the device status to:
 
 ```text
-Legal notes: ... | root ... | Live label ...
+Legal notes: ... | root ... | SysEx label ...
 ```
 
 The receiver expects exactly:
@@ -103,14 +117,79 @@ The receiver expects exactly:
 F0 77 01 40 01 [8 interval bytes] [root] [mode] [track] F7
 ```
 
-The eight interval bytes are authoritative. The `mode` byte is used only as a
-fallback label when updating Live's scale UI. The octave duplicate in the eight
-intervals is removed when building the pitch-class set.
+The eight interval bytes are authoritative only when **Valid Notes** is set to
+**SysEx Intervals**. The `mode` byte remains a fallback label for legacy/debug
+display. When **MIDI Note Field** is selected, that independently captured
+collection is authoritative and may intentionally differ from SysEx. The raw
+MIDI collection retains register and duplicate pitch classes; algorithms that
+need pitch classes derive them downstream.
+
+For an A/B comparison, Tetrachords may also send a collection of simultaneous
+Note Ons on a dedicated channel. Use the separate input track below, then switch
+**Valid Notes** between **SysEx Intervals** and **MIDI Note Field** while
+playback continues. After a 25 ms quiet window, the receiver atomically commits
+whatever non-empty Note On burst was sent as a complete replacement field;
+ordinary releases do not clear or merge it. Its monitor rows
+show the raw SysEx-derived notes, raw MIDI notes, and active source, plus an
+`EXACT RAW MATCH`, `SAME PITCH CLASSES`, or `DIFFERENT` comparison.
+
+### Dedicated note-field track (required for the reliable two-stream setup)
+
+Live was observed presenting hardware channel-3 notes to Max as channel 1.
+Do not combine the two note streams using All Channels and filter inside Max.
+Filter them at the Ableton track inputs instead:
+
+| Track | Ableton input | Device | Device settings |
+|---|---|---|---|
+| Harmony Receiver | Tetrachords → Ch. 1 | Tetrachords Harmony Receiver | Chord Ch 1; Field input Separate track; Valid Notes MIDI Note Field |
+| Note Field | Tetrachords → Ch. 3 | Tetrachords Note Field Input | No internal channel selector needed |
+
+Both tracks: Monitor In, MIDI To No Output. Put each device first in its chain;
+no Note Length/Latch is required. Use only one Harmony Receiver and one Note
+Field Input for this shared harmonic system. Existing quantizer tracks stay unchanged.
+
+The field device buffers any nonempty Note On burst, commits after 25 ms of
+quiet, retains exact MIDI pitches (including octave duplicates), and ignores
+Note Offs. Only the receiver publishes harmonic state. The field device uses
+a separate mailbox so it can load before the receiver without losing its last
+completed collection; that collection is retained if the helper is disabled.
+An oversized burst is discarded, never partially committed.
+
+### Ableton Live Current Scale sync
+
+The receiver's visible **Live Scale** menu has two persisted choices:
+
+- **Off** leaves Live's Current Scale untouched.
+- **Current Scale** maps the currently selected valid-note source to the closest
+  scale that Live can represent, then writes Song root, scale name and scale
+  mode. This is the default, matching the receiver's previous automatic update.
+
+This mapping is only a projection for Live-native scale-aware devices. The
+Harmonic Quantizer always keeps using the exact active Tetrachords pitch
+collection. An eight-note MIDI field therefore stays eight-note even when Live
+can express it only as a seven-note approximation.
+
+The receiver holds the SysEx root stable while matching either valid-note
+source. It reports **EXACT**, **APPROXIMATE**, or **NONE** on the Monitor page,
+including notes omitted from or added by the Live projection. Writes are
+coalesced for 30 ms, repeated identical states are skipped, and a read-back of
+`root_note`, `scale_name`, `scale_mode`, and `scale_intervals` verifies the
+result. Live observations are diagnostics only and never feed back into the
+canonical Tetrachords state.
+
+Developer diagnostics live in `tools/Live Scale API Probe.maxpat`. Run it from
+Live's bundled Max to probe Song and selected-clip read/write/observe behavior
+against the installed beta without deliberately changing values.
+
+Select **Separate track** explicitly in existing saved receiver instances;
+fresh devices default to it. Numeric Field input options remain legacy local
+filters, not hardware channel selectors. Confirm the receiver's SysEx/root
+readout still updates from the chord track, then confirm the field and chord
+readouts change independently. Host/hardware validation remains required.
 
 Ordinary chord Note Ons arriving on the same track are captured as the active
-chord. Set **Chord Ch** to the Tetrachords MIDI output channel carrying that
-chord, or leave it at **all** only when no other Tetrachords note streams reach
-this receiver track.
+chord. Set **Chord Ch** to **1** (the channel delivered inside Live), while
+the Ableton track input selects Tetrachords' actual chord-output channel.
 
 **Chord Hold** defaults to **sysex**. Each valid Tetrachords SysEx begins a fresh
 capture, the following chord Note On burst replaces the latched chord, and Note
@@ -129,26 +208,44 @@ live.thisdevice → deferlow → init → js
 
 It intentionally does not initialize `LiveAPI` from `loadbang`.
 
-## Track 2 — OXI quantizer / harmonizer
+## Track 2 — source quantizer / harmonizer
 
 Create a second dedicated MIDI track:
 
 ```text
-MIDI From:  OXI USB MIDI
+MIDI From:  sequencer or controller MIDI
 Channel:    All Channels
 Monitor:    In
-Device:     OXI Harmonic Quantizer
-MIDI To:    OXI return port, FH-2, or another hardware target
+Device:     Harmonic Quantizer
+MIDI To:    synth, MIDI/CV converter, or another hardware target
 Channel:    selected in Live
 ```
 
-Use any OXI MIDI channels you need. The device processes every incoming note
+Use any source MIDI channels you need. The device processes every incoming note
 and preserves its source channel; Live's MIDI To channel selection determines
 the destination channel.
 
-### Harmonizer mode
+### Input behavior for gestural pitch sources
 
-Choose **harmonizer** in the Mode menu. Within every input octave, C through B
+**Input** controls how the quantizer treats the source note lifecycle:
+
+- **Follow Gate** preserves every incoming Note On and Note Off. Use this for
+  keyboards, sequencers and sources whose MIDI notes also articulate the sound.
+- **Hold Last Pitch** keeps one quantized output note active per MIDI channel.
+  Incoming Note Offs are ignored; the next Note On safely releases and replaces
+  the previous output. Use this when a gestural MIDI source supplies pitch while
+  separate hardware triggers or envelopes articulate the sound.
+
+In Hold Last Pitch, **Settle** waits 0–100 ms before adopting a new source pitch.
+The default 20 ms suppresses brief adjacent-note flutter at gesture boundaries;
+repeated reports of the same pitch confirm it rather than restarting the timer.
+Set Settle to 0 ms for immediate pitch changes. Follow Gate never applies this
+delay. Switching input behaviors or using Panic releases all device-managed held
+notes so mode changes cannot leave stuck notes.
+
+### Chord Map mode
+
+Choose **chord-map** in the Mode menu. Within every input octave, C through B
 act as successive selectors into the active Tetrachords chord. Selection wraps
 up an octave after every chord tone has been used. Rhythm, velocity, MIDI
 channel and Note On/Off identity are preserved.
@@ -160,19 +257,120 @@ The **Chord Map** menu has two choices:
 - **voicing**: follows the exact MIDI notes and inversion emitted by
   Tetrachords, transposed into the input note's register.
 
-If the active chord is empty, Harmonizer temporarily falls back to nearest
-quantization against the latest Tetrachords scale. **Harmonizer** is the default
-mode now that the receiver latches short Tetrachords chords; **Nearest** remains
-available and is otherwise unchanged.
+If the active chord is empty, Chord Map temporarily falls back to nearest
+quantization against the latest Tetrachords scale. Chord Map remains available
+for deliberate pattern transformation and is the default mode.
 
-The default register is MIDI 24–48. Quantizer and receiver presentation
+### Chord Nearest mode
+
+Choose **chord-nearest** to preserve the incoming
+melody while constraining each new note to the closest pitch class in the active
+Tetrachords chord. Unlike Chord Map, input notes are not reinterpreted as
+chord-tone selectors, so an ascending line keeps its contour without selector
+wrapping. Equal-distance ties follow the device's existing up/down tie
+preference.
+
+If no active chord has been captured, Chord Nearest falls back to ordinary
+nearest quantization against the selected Tetrachords note collection. Chord
+Map is the default mode. This release intentionally replaces the former menu
+ordering under the same device identity, so review the Mode once when opening
+an older Ableton Set. The menu is ordered and labeled as:
+
+1. `chord-nearest`
+2. `scale-nearest`
+3. `chord-map`
+4. `scale-contour`
+5. `stateful-nearest`
+6. `scale-up`
+7. `scale-down`
+8. `scale-map`
+
+### Ensemble Coordination
+
+Use one quantizer instance per melodic part. Set **Ensemble** to the same
+number (1–8) on the four tracks and assign unique **Part** numbers 1–4. These
+identities are independent of MIDI channels; Ableton still controls routing.
+Ensemble 0 is Off and retains the original processing without buffering.
+Group, Part and **Voice Separation** are saved Live parameters. Defaults are
+Off, Part 1 and Voice Separation 0% so existing tracks opt in explicitly.
+
+Each part publishes its last assigned MIDI pitch for the monitor and separately
+tracks currently occupied pitches for scoring. In Follow Notes, Note Off removes
+occupancy; Hold Last Pitch retains it until replacement or reset. The monitor
+still displays assigned pitches, not which analog envelopes are currently audible.
+The four-part monitor shows note names and MIDI numbers, flags exact unisons,
+and reports CONFLICT when two devices claim the same Part. Conflicting parts
+keep their normal quantized pitches rather than applying separation.
+
+Voice Separation is a soft preference against exact pitch duplication. At 0%,
+the original independent path is retained without ensemble buffering; increasing
+it favors a nearby allowed alternative within six semitones. Octave doubling is allowed.
+Chord modes choose chord tones; other modes use the active valid collection.
+Register boundaries and directional constraints restrict alternatives. The
+scorer combines input distance, Stateful Nearest continuity/common-tone costs,
+and collision pressure. The final pitch is remembered and paired with its Note
+Off. Continuity remains independent on every instance.
+
+Ensemble-enabled instances with Voice Separation above zero collect requests
+for approximately **4 ms** and resolve each batch with first choice rotating
+from **Voice A → D** between cycles. Idle parts' sounding pitches remain
+occupied. Notes arriving
+in the same batch therefore give the same choices regardless of track arrival
+order, provided the harmony, settings and prior state match. Notes outside
+that window form subsequent batches. This is optimized for four monophonic
+melodic lanes rather than polyphonic allocation within one lane.
+
+Note Ons and Note Offs receive the same nominal delay to preserve short gates.
+Max scheduler load can add timing jitter; actual Ableton/hardware latency
+still needs a listening test. MIDI clock is not buffered. Independently
+routed external triggers are not delayed: allow CV to settle before triggering
+the envelope. Ensemble Off is available when that timing cannot be accommodated.
+
+**Reset Ensemble** clears all four parts' pitch/continuity memories together,
+without releasing held notes or losing their release mappings. Use it before
+restarting the same phrase for a controlled A/B. This release has a manual
+reset; automatic host-synchronized phrase resets are deferred until the studio
+test. Reset Voices remains local. Deleted devices release their membership;
+stale members expire after two seconds without a heartbeat. Do not reuse an
+ensemble group in two open Sets that should be independent.
+
+First studio test: four KeyStep Pro lanes, Ensemble 1, Parts 1–4,
+Stateful Nearest, Continuity 60%, Register Free (or each part's chosen Limited
+range). Start with Separation 0%, then try 50%. Reset Ensemble and restart the
+source phrase at each A/B endpoint. The same repeating inputs and harmony are
+needed to assess reproducibility; live gestures are naturally different.
+
+### Stateful Nearest mode
+
+**stateful-nearest** remembers the final MIDI pitch actually transmitted for
+each incoming MIDI channel. It scores every currently legal candidate against
+both the new input pitch and that voice's previous output. **Continuity** sets
+the balance: 0% is exactly Scale Nearest; higher values favor smaller movement.
+
+On the first Note On after the harmonic version changes, a previous pitch that
+remains legal receives a strong but finite common-tone bonus. A clearly
+different incoming gesture can still move the voice, and subsequent notes use
+ordinary stateful scoring so high continuity does not permanently freeze it.
+The status display shows input, previous output, final output, signed movement,
+and `[COMMON]` when a common tone was retained. State is independent per MIDI
+channel and per device instance. **Reset Voices** clears only that memory;
+Panic clears it as part of its broader note-off and controller reset.
+
+Stateful Nearest does not retune an already sounding note when harmony changes.
+It makes its transition on the next Note On. The former Scale Smooth algorithm
+and its overlapping Sticky alias have been replaced by this mode.
+
+The **Register** menu selects **limited** or **free**. Limited uses the Low/High
+window (MIDI 24–48 by default). Free quantizes the harmonic pitch target but
+does not fold octaves or apply either register boundary, allowing the source
+sequencer to own register completely. Quantizer and receiver presentation
 controls are Live parameters: each device instance stores its settings in the
 Ableton Set and restores them without load-time defaults overwriting the saved
 state.
 
 One four-voice example is:
 
-| OXI sequence | MIDI channel | Matriarch destination |
+| Source sequence | MIDI channel | Matriarch destination |
 |---|---:|---|
 | Oscillator 1 line | 2 | OSC 1 PITCH |
 | Oscillator 2 line | 3 | OSC 2 PITCH |
@@ -181,7 +379,7 @@ One four-voice example is:
 
 All non-note channel messages pass through unchanged. MIDI clock and other
 real-time bytes also pass through. SysEx is passed through unchanged on the
-OXI track.
+source track.
 
 ## FH-2 setup
 
@@ -209,8 +407,10 @@ before adding musical octave offsets.
 
 ## Behavior
 
-- Nearest mode quantizes to the nearest legal pitch across the MIDI range.
-- Harmonizer mode maps the OXI selector pattern through the active MIDI chord.
+- Scale Nearest mode quantizes to the nearest legal pitch across the MIDI range.
+- Chord Nearest mode preserves melodic contour while targeting the closest
+  active-chord tone.
+- Chord Map mode maps the source selector pattern through the active MIDI chord.
 - Equal-distance ties go upward by default.
 - A Note Off uses the exact output pitch selected for its matching Note On.
 - Overlapping source notes that collapse to one output pitch are reference
@@ -227,10 +427,10 @@ before adding musical octave offsets.
    leave **Chord Hold** at **sysex**.
 3. Change a Tetrachords chord and confirm the receiver shows `Active chord`.
 4. Confirm the quantizer status shows the same chord notes.
-5. Select **harmonizer** and **pitchclass**.
-6. Run an ascending chromatic OXI sequence on one channel.
+5. Select **chord-map** and **pitchclass**.
+6. Run an ascending chromatic source sequence on one channel.
 7. Confirm it arpeggiates the active chord and changes with Tetrachords.
-8. Try **voicing**, then add other OXI channels after the one-channel test.
+8. Try **voicing**, then add other source channels after the one-channel test.
 
 Use the device's **Panic** button if a downstream synth or converter retains a
 stuck note.
@@ -242,6 +442,7 @@ If Node.js is installed, run these from the package root:
 ```text
 node tests/test_quantizer_logic.js
 node tests/test_max_js_engines.js
+node tests/test_ensemble.js
 ```
 
 The second test mocks the Max JavaScript environment and verifies Tetrachords

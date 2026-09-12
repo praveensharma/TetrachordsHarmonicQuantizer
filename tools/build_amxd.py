@@ -6,7 +6,7 @@ JSON in its ``ptch`` chunk. This tool replaces that chunk while preserving all
 other template chunks byte-for-byte, then parses the generated file again and
 compares its embedded JSON with the source ``.maxpat``.
 
-By default, both devices are built into ``dist/``. Pass ``--install`` to make
+By default, all devices are built into ``dist/``. Pass ``--install`` to make
 timestamped backups and atomically update the Ableton User Library files.
 """
 
@@ -26,7 +26,12 @@ from typing import Iterable
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-USER_LIBRARY = Path.home() / "Music/Ableton/User Library/Max4Live"
+USER_LIBRARY_ROOT = Path.home() / "Music/Ableton/User Library"
+MAX4LIVE_LIBRARY = USER_LIBRARY_ROOT / "Max4Live"
+MIDI_EFFECT_LIBRARY = (
+    USER_LIBRARY_ROOT / "Presets/MIDI Effects/Max MIDI Effect/Imported"
+)
+MONITOR_SCRIPT = PROJECT_ROOT / 'Harmonic_Quantizer/harmonic_monitor.js'
 
 
 @dataclass(frozen=True)
@@ -36,6 +41,12 @@ class Device:
     javascript: Path
     install_dir: Path
     filename: str
+    install_alias_dirs: tuple[Path, ...] = ()
+    support_files: tuple[Path, ...] = ()
+
+    @property
+    def install_dirs(self) -> tuple[Path, ...]:
+        return (self.install_dir, *self.install_alias_dirs)
 
     @property
     def installed_amxd(self) -> Path:
@@ -52,13 +63,22 @@ class Device:
 
 DEVICES = (
     Device(
-        name="OXI Harmonic Quantizer",
+        name='Tetrachords Note Field Input',
+        maxpat=PROJECT_ROOT / 'Note_Field_Input/Tetrachords Note Field Input.maxpat',
+        javascript=PROJECT_ROOT / 'Note_Field_Input/note_field_input.js',
+        install_dir=MAX4LIVE_LIBRARY / 'Tetrachords Note Field Input',
+        filename='Tetrachords Note Field Input.amxd',
+        install_alias_dirs=(MIDI_EFFECT_LIBRARY,),
+    ),
+    Device(
+        name="Harmonic Quantizer",
         maxpat=PROJECT_ROOT
-        / "OXI_Harmonic_Quantizer/OXI Harmonic Quantizer.maxpat",
+        / "Harmonic_Quantizer/Harmonic Quantizer.maxpat",
         javascript=PROJECT_ROOT
-        / "OXI_Harmonic_Quantizer/oxi_harmonic_quantizer.js",
-        install_dir=USER_LIBRARY / "OXI Harmonic Quantizer",
-        filename="OXI Harmonic Quantizer.amxd",
+        / "Harmonic_Quantizer/harmonic_quantizer.js",
+        install_dir=MAX4LIVE_LIBRARY / "Harmonic Quantizer",
+        filename="Harmonic Quantizer.amxd",
+        install_alias_dirs=(MIDI_EFFECT_LIBRARY,),
     ),
     Device(
         name="Tetrachords Harmony Receiver",
@@ -66,8 +86,12 @@ DEVICES = (
         / "Tetrachords_Harmony_Receiver/Tetrachords Harmony Receiver.maxpat",
         javascript=PROJECT_ROOT
         / "Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js",
-        install_dir=USER_LIBRARY / "Tetrachords Harmony Receiver",
+        install_dir=MAX4LIVE_LIBRARY / "Tetrachords Harmony Receiver",
         filename="Tetrachords Harmony Receiver.amxd",
+        support_files=(
+            PROJECT_ROOT / "Tetrachords_Harmony_Receiver/live_scale_matcher.js",
+            PROJECT_ROOT / "Tetrachords_Harmony_Receiver/live_scale_bridge.js",
+        ),
     ),
 )
 
@@ -186,6 +210,8 @@ def template_for(device: Device) -> Path:
         return device.installed_amxd
     if device.seed_amxd.exists():
         return device.seed_amxd
+    if device.name=='Tetrachords Note Field Input':
+        return MAX4LIVE_LIBRARY / 'Harmonic Quantizer/Harmonic Quantizer.amxd'
     raise ValueError(
         f"{device.name}: no installed AMXD or committed dist seed is available"
     )
@@ -227,26 +253,45 @@ def verify_installed(devices: Iterable[Device]) -> list[dict[str, object]]:
     results = []
     for device in devices:
         _, source_json = read_maxpat(device.maxpat)
-        installed = device.installed_amxd
-        container = parse_container(installed.read_bytes(), installed)
-        if embedded_patch(container, installed) != source_json:
-            raise ValueError(
-                f"{device.name}: installed AMXD does not match source maxpat"
-            )
-        if (
-            not device.installed_javascript.exists()
-            or device.installed_javascript.read_bytes()
-            != device.javascript.read_bytes()
-        ):
-            raise ValueError(
-                f"{device.name}: installed JavaScript does not match source"
+        locations = []
+        for install_dir in device.install_dirs:
+            if (install_dir / MONITOR_SCRIPT.name).read_bytes() != MONITOR_SCRIPT.read_bytes():
+                raise ValueError(f'{device.name}: installed monitor script differs from source')
+            installed = install_dir / device.filename
+            installed_javascript = install_dir / device.javascript.name
+            container = parse_container(installed.read_bytes(), installed)
+            if embedded_patch(container, installed) != source_json:
+                raise ValueError(
+                    f"{device.name}: installed AMXD does not match source maxpat"
+                )
+            if (
+                not installed_javascript.exists()
+                or installed_javascript.read_bytes()
+                != device.javascript.read_bytes()
+            ):
+                raise ValueError(
+                    f"{device.name}: installed JavaScript does not match source"
+                )
+            for support_file in device.support_files:
+                installed_support = install_dir / support_file.name
+                if (
+                    not installed_support.exists()
+                    or installed_support.read_bytes() != support_file.read_bytes()
+                ):
+                    raise ValueError(
+                        f"{device.name}: installed {support_file.name} differs from source"
+                    )
+            locations.append(
+                {
+                    "installed": str(installed),
+                    "bytes": installed.stat().st_size,
+                    "javascript": str(installed_javascript),
+                }
             )
         results.append(
             {
                 "name": device.name,
-                "installed": str(installed),
-                "bytes": installed.stat().st_size,
-                "javascript": str(device.installed_javascript),
+                "locations": locations,
                 "javascript_verified": True,
                 "verified": True,
             }
@@ -260,7 +305,7 @@ def parse_args() -> argparse.Namespace:
     mode.add_argument(
         "--install",
         action="store_true",
-        help="back up and atomically update both User Library AMXDs",
+        help="back up and atomically update all User Library AMXDs",
     )
     mode.add_argument(
         "--verify-installed",
@@ -286,14 +331,26 @@ def main() -> int:
             backups: dict[str, list[str]] = {}
             for device in DEVICES:
                 backups[device.name] = []
-                if device.installed_amxd.exists():
-                    backups[device.name].append(
-                        str(backup(device.installed_amxd, stamp))
-                    )
-                if device.installed_javascript.exists():
-                    backups[device.name].append(
-                        str(backup(device.installed_javascript, stamp))
-                    )
+                for install_dir in device.install_dirs:
+                    monitor = install_dir / MONITOR_SCRIPT.name
+                    if monitor.exists():
+                        backups[device.name].append(str(backup(monitor, stamp)))
+                    installed_amxd = install_dir / device.filename
+                    installed_javascript = install_dir / device.javascript.name
+                    if installed_amxd.exists():
+                        backups[device.name].append(
+                            str(backup(installed_amxd, stamp))
+                        )
+                    if installed_javascript.exists():
+                        backups[device.name].append(
+                            str(backup(installed_javascript, stamp))
+                        )
+                    for support_file in device.support_files:
+                        installed_support = install_dir / support_file.name
+                        if installed_support.exists():
+                            backups[device.name].append(
+                                str(backup(installed_support, stamp))
+                            )
 
             results = []
             for device in DEVICES:
@@ -302,20 +359,43 @@ def main() -> int:
                     device.installed_javascript,
                     device.javascript.read_bytes(),
                 )
+                for install_dir in device.install_alias_dirs:
+                    atomic_write(
+                        install_dir / device.filename,
+                        device.installed_amxd.read_bytes(),
+                    )
+                    atomic_write(
+                        install_dir / device.javascript.name,
+                        device.javascript.read_bytes(),
+                    )
+                for install_dir in device.install_dirs:
+                    for support_file in device.support_files:
+                        atomic_write(
+                            install_dir / support_file.name,
+                            support_file.read_bytes(),
+                        )
                 result["javascript"] = str(device.installed_javascript)
+                for install_dir in device.install_dirs:
+                    atomic_write(install_dir / MONITOR_SCRIPT.name, MONITOR_SCRIPT.read_bytes())
                 result["javascript_verified"] = (
                     device.installed_javascript.read_bytes()
                     == device.javascript.read_bytes()
                 )
+                result["locations"] = verify_installed((device,))[0]["locations"]
                 results.append(result)
             for result in results:
                 result["backup"] = backups[result["name"]]
         else:
             args.dist.mkdir(parents=True, exist_ok=True)
+            atomic_write(args.dist / MONITOR_SCRIPT.name, MONITOR_SCRIPT.read_bytes())
             results = [
                 build_device(device, args.dist / device.filename)
                 for device in DEVICES
             ]
+            for device in DEVICES:
+                atomic_write(args.dist / device.javascript.name, device.javascript.read_bytes())
+                for support_file in device.support_files:
+                    atomic_write(args.dist / support_file.name, support_file.read_bytes())
         print(json.dumps({"ok": True, "devices": results}, indent=2))
         return 0
     except (OSError, ValueError) as error:

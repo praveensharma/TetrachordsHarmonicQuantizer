@@ -13,7 +13,7 @@
       100.0,
       100.0,
       720.0,
-      310.0
+      410.0
     ],
     "bglocked": 0,
     "openinpresentation": 1,
@@ -30,9 +30,9 @@
     "imprint": 0,
     "enablehscroll": 1,
     "enablevscroll": 1,
-    "devicewidth": 690.0,
-    "description": "Receives Tetrachords SysEx and captures the exact active MIDI chord.",
-    "digest": "Tetrachords scale and active-chord receiver for the companion OXI quantizer.",
+    "devicewidth": 790,
+    "description": "Receives Tetrachords SysEx, active chord notes and an optional authoritative MIDI note field.",
+    "digest": "Tetrachords harmonic-state receiver for the companion Harmonic Quantizer.",
     "tags": "MIDI Tetrachords harmony quantizer",
     "boxes": [
       {
@@ -50,10 +50,17 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            10.0,
-            310.0,
-            24.0
+            15,
+            7,
+            310,
+            24
+          ],
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
           ]
         }
       },
@@ -61,19 +68,27 @@
         "box": {
           "id": "obj-subtitle",
           "maxclass": "comment",
-          "text": "Tetrachords USB track • captures SysEx plus active chord notes • MIDI To: No Output",
+          "text": "HARMONIC INPUT  /  SysEx and MIDI note comparison",
           "patching_rect": [
             20.0,
             42.0,
             490.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
-            15.0,
-            36.0,
-            510.0,
-            20.0
+            335,
+            10,
+            440,
+            18
+          ],
+          "fontsize": 10.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
           ]
         }
       },
@@ -92,12 +107,126 @@
       },
       {
         "box": {
+          "id": "obj-live-scale-label",
+          "maxclass": "comment",
+          "text": "Live Scale",
+          "patching_rect": [
+            20.0,
+            470.0,
+            70.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            10,
+            70,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "varname": "obj-live-scale-label"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-live-scale-menu",
+          "maxclass": "umenu",
+          "items": [
+            "Off",
+            ",",
+            "Current Scale"
+          ],
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            100.0,
+            470.0,
+            150.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            405,
+            7,
+            185,
+            23
+          ],
+          "parameter_enable": 1,
+          "varname": "live_scale_sync",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Live Scale Sync",
+              "parameter_shortname": "Live Scale",
+              "parameter_type": 2,
+              "parameter_mmax": 1,
+              "parameter_enum": [
+                "Off",
+                "Current Scale"
+              ],
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                1
+              ]
+            }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Project the active Tetrachords valid-note source into Ableton Live's Current Scale."
+        }
+      },
+      {
+        "box": {
+          "id": "obj-live-scale-prepend",
+          "maxclass": "newobj",
+          "text": "prepend livescalesync",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            265.0,
+            470.0,
+            155.0,
+            22.0
+          ]
+        }
+      },
+      {
+        "box": {
           "id": "obj-js",
           "maxclass": "newobj",
           "text": "js tetrachords_harmony_receiver.js",
           "numinlets": 1,
-          "numoutlets": 2,
+          "numoutlets": 5,
           "outlettype": [
+            "",
+            "",
+            "",
             "",
             ""
           ],
@@ -120,7 +249,7 @@
             50.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             15.0,
             66.0,
@@ -132,7 +261,7 @@
       {
         "box": {
           "id": "obj-status",
-          "maxclass": "message",
+          "maxclass": "comment",
           "text": "Waiting for Live initialization",
           "patching_rect": [
             105.0,
@@ -142,11 +271,30 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            65.0,
-            64.0,
-            600.0,
-            22.0
-          ]
+            15,
+            140,
+            760,
+            23
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "ignoreclick": 1,
+          "numinlets": 1,
+          "numoutlets": 0,
+          "varname": "obj-status",
+          "hidden": 0
         }
       },
       {
@@ -274,11 +422,21 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            15.0,
-            102.0,
-            60.0,
-            20.0
-          ]
+            15,
+            103,
+            80,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "varname": "obj-chord-channel-label",
+          "hidden": 0
         }
       },
       {
@@ -335,10 +493,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            75.0,
-            100.0,
-            80.0,
-            22.0
+            100,
+            100,
+            70,
+            23
           ],
           "parameter_enable": 1,
           "varname": "chord_channel",
@@ -372,7 +530,22 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hidden": 0
         }
       },
       {
@@ -386,11 +559,11 @@
             560.0,
             20.0
           ],
-          "presentation": 1,
+          "presentation": 0,
           "presentation_rect": [
             15.0,
-            132.0,
-            570.0,
+            242.0,
+            650.0,
             20.0
           ]
         }
@@ -399,7 +572,7 @@
         "box": {
           "id": "obj-chord-hold-label",
           "maxclass": "comment",
-          "text": "Chord Hold",
+          "text": "Hold",
           "patching_rect": [
             435.0,
             270.0,
@@ -408,11 +581,21 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            175.0,
-            102.0,
-            75.0,
-            20.0
-          ]
+            185,
+            103,
+            65,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "varname": "obj-chord-hold-label",
+          "hidden": 0
         }
       },
       {
@@ -439,10 +622,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            250.0,
-            100.0,
-            80.0,
-            22.0
+            250,
+            100,
+            65,
+            23
           ],
           "parameter_enable": 1,
           "varname": "chord_hold",
@@ -461,7 +644,23 @@
                 0
               ]
             }
-          }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "SysEx latches each chord update; Gate follows Note On/Off lengths.",
+          "hidden": 0
         }
       },
       {
@@ -502,6 +701,398 @@
       },
       {
         "box": {
+          "id": "obj-valid-source-label",
+          "maxclass": "comment",
+          "text": "Valid Notes",
+          "patching_rect": [
+            20.0,
+            340.0,
+            75.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            43,
+            80,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "varname": "obj-valid-source-label",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-source-menu",
+          "maxclass": "umenu",
+          "items": [
+            "SysEx Intervals",
+            ",",
+            "MIDI Note Field"
+          ],
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            95.0,
+            340.0,
+            125.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            100,
+            40,
+            210,
+            23
+          ],
+          "parameter_enable": 1,
+          "varname": "valid_note_source",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Valid Note Source",
+              "parameter_shortname": "Valid Source",
+              "parameter_type": 2,
+              "parameter_mmax": 1,
+              "parameter_enum": [
+                "SysEx Intervals",
+                "MIDI Note Field"
+              ],
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                0
+              ]
+            }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Select the active valid-note collection. Both sources remain visible for comparison.",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-source-prepend",
+          "maxclass": "newobj",
+          "text": "prepend validsource",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            235.0,
+            340.0,
+            130.0,
+            22.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-channel-label",
+          "maxclass": "comment",
+          "text": "Field input",
+          "patching_rect": [
+            385.0,
+            340.0,
+            65.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            73,
+            80,
+            18
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.66,
+            0.72,
+            0.76,
+            1.0
+          ],
+          "varname": "obj-valid-channel-label",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-channel-menu",
+          "maxclass": "umenu",
+          "items": [
+            "off",
+            ",",
+            "1",
+            ",",
+            "2",
+            ",",
+            "3",
+            ",",
+            "4",
+            ",",
+            "5",
+            ",",
+            "6",
+            ",",
+            "7",
+            ",",
+            "8",
+            ",",
+            "9",
+            ",",
+            "10",
+            ",",
+            "11",
+            ",",
+            "12",
+            ",",
+            "13",
+            ",",
+            "14",
+            ",",
+            "15",
+            ",",
+            "16",
+            ",",
+            "Separate track"
+          ],
+          "numinlets": 1,
+          "numoutlets": 3,
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            450.0,
+            340.0,
+            70.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            100,
+            70,
+            210,
+            23
+          ],
+          "parameter_enable": 1,
+          "varname": "valid_note_channel",
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "MIDI Note Field Channel",
+              "parameter_shortname": "Field Ch",
+              "parameter_type": 2,
+              "parameter_mmax": 17,
+              "parameter_enum": [
+                "off",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15",
+                "16",
+                "Separate track"
+              ],
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                17
+              ]
+            }
+          },
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1.0
+          ],
+          "hint": "Separate track receives the Note Field Input device. Numeric choices are legacy in-device MIDI channel filters.",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-valid-channel-prepend",
+          "maxclass": "newobj",
+          "text": "prepend validnotechannel",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            535.0,
+            340.0,
+            160.0,
+            22.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-derived-monitor",
+          "maxclass": "comment",
+          "text": "SysEx Intervals: waiting",
+          "patching_rect": [
+            20.0,
+            375.0,
+            650.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            40,
+            440,
+            23
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "ignoreclick": 1,
+          "numinlets": 1,
+          "numoutlets": 0,
+          "varname": "obj-derived-monitor",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-midi-valid-monitor",
+          "maxclass": "comment",
+          "text": "MIDI Note Field: Off",
+          "patching_rect": [
+            20.0,
+            402.0,
+            650.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            69,
+            440,
+            23
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1.0
+          ],
+          "bgcolor": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "ignoreclick": 1,
+          "numinlets": 1,
+          "numoutlets": 0,
+          "varname": "obj-midi-valid-monitor",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-active-valid-monitor",
+          "maxclass": "comment",
+          "text": "Active: SysEx Intervals • no complete set",
+          "patching_rect": [
+            20.0,
+            429.0,
+            650.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            98,
+            440,
+            34
+          ],
+          "fontsize": 11.0,
+          "fontname": "Arial",
+          "textcolor": [
+            0.44,
+            0.85,
+            0.73,
+            1.0
+          ],
+          "bgcolor": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "ignoreclick": 1,
+          "linecount": 2,
+          "numinlets": 1,
+          "numoutlets": 0,
+          "varname": "obj-active-valid-monitor",
+          "hidden": 0
+        }
+      },
+      {
+        "box": {
           "id": "obj-thisdevice",
           "maxclass": "newobj",
           "text": "live.thisdevice",
@@ -512,9 +1103,321 @@
             22.0
           ]
         }
+      },
+      {
+        "box": {
+          "id": "field-transport",
+          "maxclass": "newobj",
+          "text": "r tetrachords_note_field_v1",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            20,
+            2000,
+            240,
+            22
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-tab",
+          "maxclass": "textbutton",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            610,
+            7,
+            80,
+            23
+          ],
+          "varname": "monitor-play-tab",
+          "presentation": 1,
+          "presentation_rect": [
+            610,
+            7,
+            80,
+            23
+          ],
+          "text": "Play",
+          "texton": "Play",
+          "mode": 0,
+          "outlettype": [
+            "",
+            "int",
+            ""
+          ],
+          "rounded": 7,
+          "bgcolor": [
+            0.04,
+            0.48,
+            1,
+            1
+          ],
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "fontsize": 11
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-bang",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-play-bang",
+          "text": "t b"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-play-message",
+          "maxclass": "message",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-play-message",
+          "text": "page 0"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-tab",
+          "maxclass": "textbutton",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            695,
+            7,
+            80,
+            23
+          ],
+          "varname": "monitor-monitor-tab",
+          "presentation": 1,
+          "presentation_rect": [
+            695,
+            7,
+            80,
+            23
+          ],
+          "text": "Monitor",
+          "texton": "Monitor",
+          "mode": 0,
+          "outlettype": [
+            "",
+            "int",
+            ""
+          ],
+          "rounded": 7,
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1
+          ],
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "fontsize": 11
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-bang",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-monitor-bang",
+          "text": "t b"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-monitor-message",
+          "maxclass": "message",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            10,
+            1800,
+            180,
+            22
+          ],
+          "varname": "monitor-monitor-message",
+          "text": "page 1"
+        }
+      },
+      {
+        "box": {
+          "id": "monitor-detail",
+          "maxclass": "jsui",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            15,
+            40,
+            760,
+            98
+          ],
+          "varname": "monitor-detail",
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            40,
+            760,
+            98
+          ],
+          "jsarguments": [
+            "receiver",
+            "{\"play\": [\"obj-status\", \"obj-chord-channel-label\", \"chord_channel\", \"obj-chord-hold-label\", \"chord_hold\", \"obj-valid-source-label\", \"valid_note_source\", \"obj-valid-channel-label\", \"valid_note_channel\", \"obj-derived-monitor\", \"obj-midi-valid-monitor\", \"obj-active-valid-monitor\"], \"monitor\": [\"monitor-detail\"]}"
+          ],
+          "hidden": 1,
+          "filename": "harmonic_monitor.js",
+          "parameter_enable": 0,
+          "border": 0,
+          "bgcolor": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "ignoreclick": 1
+        }
       }
     ],
     "lines": [
+      {
+        "patchline": {
+          "source": [
+            "obj-live-scale-menu",
+            1
+          ],
+          "destination": [
+            "obj-live-scale-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-live-scale-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-valid-source-menu",
+            1
+          ],
+          "destination": [
+            "obj-valid-source-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-valid-source-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-valid-channel-menu",
+            0
+          ],
+          "destination": [
+            "obj-valid-channel-prepend",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-valid-channel-prepend",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-js",
+            2
+          ],
+          "destination": [
+            "obj-derived-monitor",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-js",
+            3
+          ],
+          "destination": [
+            "obj-midi-valid-monitor",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-js",
+            4
+          ],
+          "destination": [
+            "obj-active-valid-monitor",
+            0
+          ]
+        }
+      },
       {
         "patchline": {
           "source": [
@@ -670,6 +1573,90 @@
             0
           ]
         }
+      },
+      {
+        "patchline": {
+          "source": [
+            "field-transport",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-tab",
+            0
+          ],
+          "destination": [
+            "monitor-play-bang",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-bang",
+            0
+          ],
+          "destination": [
+            "monitor-play-message",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-play-message",
+            0
+          ],
+          "destination": [
+            "monitor-detail",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-tab",
+            0
+          ],
+          "destination": [
+            "monitor-monitor-bang",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-bang",
+            0
+          ],
+          "destination": [
+            "monitor-monitor-message",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "monitor-monitor-message",
+            0
+          ],
+          "destination": [
+            "monitor-detail",
+            0
+          ]
+        }
       }
     ],
     "dependency_cache": [
@@ -677,8 +1664,20 @@
         "name": "tetrachords_harmony_receiver.js",
         "type": "TEXT",
         "implicit": 1
+      },
+      {
+        "name": "harmonic_monitor.js",
+        "bootpath": ".",
+        "type": "TEXT",
+        "implicit": 1
       }
     ],
-    "autosave": 0
+    "autosave": 0,
+    "bgcolor": [
+      0.12,
+      0.14,
+      0.16,
+      1.0
+    ]
   }
 }

@@ -62,6 +62,14 @@ function harmonizeVoicing(note, activeChordNotes) {
     return notes[noteIndex] + octaveShift + 12 * octaveTurns;
 }
 
+function chordNearest(note, activeChordNotes, preferUpwardTie) {
+    const pitchClasses = activeChordNotes
+        .map((chordNote) => positiveMod(chordNote, 12))
+        .filter((value, index, values) => values.indexOf(value) === index);
+
+    return quantizeNote(note, pitchClasses, preferUpwardTie);
+}
+
 const cMajor = [0, 2, 4, 5, 7, 9, 11];
 
 assert.strictEqual(quantizeNote(60, cMajor, true), 60);
@@ -85,6 +93,16 @@ assert.deepStrictEqual(
     ),
     [64, 67, 72, 76]
 );
+
+// Chord Nearest retains the source contour and only moves notes as far as
+// needed to reach the active chord. It does not use Harmonizer's selector map.
+assert.deepStrictEqual(
+    [60, 61, 62, 64, 65, 69, 71].map((note) =>
+        chordNearest(note, [48, 51, 55, 58], true)
+    ),
+    [60, 60, 63, 63, 67, 70, 72]
+);
+assert.strictEqual(chordNearest(65, [48, 51, 55, 58], false), 63);
 
 // D Dorian intervals at root D become D E F G A B C.
 const dDorian = [0, 2, 3, 5, 7, 9, 10, 12]

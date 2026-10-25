@@ -5,7 +5,10 @@
 //
 // Inlet 0: raw MIDI bytes from [midiin]
 // Outlet 0: status messages (connect to a message box)
-// Outlet 1: harmony and active-chord lists for inspection
+// Outlet 1: harmony, active-chord and valid-note lists for inspection
+// Outlet 2: SysEx-derived note monitor
+// Outlet 3: dedicated MIDI note-field monitor
+// Outlet 4: active valid-note source monitor
 //
 // The current harmony is shared two ways:
 // 1. Global("tetrachords_harmony_v1") stores the latest snapshot.
@@ -13,18 +16,87 @@
 
 autowatch = 1;
 inlets = 1;
-outlets = 2;
+outlets = 5;
+
+if (typeof TetrachordsLiveScaleMatcher === "undefined" &&
+    typeof include !== "undefined") {
+    include("live_scale_matcher.js");
+}
+if (typeof TetrachordsLiveScaleBridge === "undefined" &&
+    typeof include !== "undefined") {
+    include("live_scale_bridge.js");
+}
 
 var GLOBAL_NAME = "tetrachords_harmony_v1";
 var BUS_NAME = "tetrachords_harmony_bus_v1";
 var harmonyGlobal = new Global(GLOBAL_NAME);
+var fieldTransport = new Global('tetrachords_field_transport_v1');
+var lastFieldPacket='';
+function fieldpacket(raw) {
+    if(validNoteCaptureChannel!==17){return;}
+    var packet;try{packet=JSON.parse(raw);}catch(e){return;}
+    if(packet.v!==1||typeof packet.id!=='string'||packet.id===lastFieldPacket||
+       !Array.isArray(packet.notes)||!packet.notes.length||packet.notes.length>128){return;}
+    for(var i=0;i<packet.notes.length;i++){
+        var n=packet.notes[i];if(typeof n!=='number'||n!==Math.floor(n)||n<0||n>127){return;}
+    }
+    lastFieldPacket=packet.id;abandon_pending_valid_notes();
+    commit_valid_field(packet.notes);
+}
+function restore_external_field(){if(validNoteCaptureChannel===17&&fieldTransport.snapshot){fieldpacket(fieldTransport.snapshot);}}
 
-var song = null;
 var ready = false;
-var updateLiveUI = 1;
+var liveScaleSyncMode = "current";
+var liveScaleMatcher = null;
+var liveScaleBridge = null;
+var liveScaleSyncTask = null;
+var pendingLiveScaleState = null;
+var liveScaleCoalesceMs = 30;
+var liveScaleInitAttempt = -1000000;
+
+function ensure_live_scale_bridge(){
+    if(liveScaleBridge)return true;
+    var time=new Date().getTime();if(time-liveScaleInitAttempt<2000)return false;
+    liveScaleInitAttempt=time;
+    try{
+        liveScaleMatcher=new TetrachordsLiveScaleMatcher();
+        liveScaleBridge=new TetrachordsLiveScaleBridge(LiveAPI,handle_live_scale_bridge_event);
+        harmonyGlobal.liveScaleCapabilities=liveScaleBridge.init();return true;
+    }catch(error){liveScaleBridge=null;runtime_trace('LIVE_INIT_ERROR\t'+error);return false;}
+}
 var sysexBuffer = [];
 var version = 0;
 var chordVersion = 0;
+var activeValidVersion = 0;
+var receiverDiagnostics = {bytes:0,sysex:0,fields:0,published:0,rejected:0,lastInput:0,lastPublish:0};
+var diagnosticTask = null;
+var discardSysEx = false;
+
+function diagnostic_tick() {
+    harmonyGlobal.tetrachordsDiagnostics = JSON.stringify(receiverDiagnostics);
+    var age=receiverDiagnostics.lastPublish ? Math.max(0,Math.floor((new Date().getTime()-receiverDiagnostics.lastPublish)/1000))+'s ago' : 'waiting';
+    outlet(0,'set','MIDI '+receiverDiagnostics.bytes+' bytes · SysEx '+receiverDiagnostics.sysex+
+        ' · Field '+receiverDiagnostics.fields+' · '+valid_source_label()+' v'+activeValidVersion+
+        ' · published '+age+' · rejected '+receiverDiagnostics.rejected+
+        (liveScaleSyncMode==='current'&&!liveScaleBridge?' · Live sync unavailable':''));
+    runtime_trace('SUMMARY\t'+JSON.stringify(receiverDiagnostics));
+    if(diagnosticTask)diagnosticTask.schedule(1000);
+}
+
+// The shared valid-note source is selected once here. Quantizers consume the
+// resulting active snapshot instead of independently choosing a source.
+var validNoteSource = "sysex";
+var validNoteCaptureChannel = 0;
+var validNoteCaptureWindowMs = 25;
+var pendingValidNoteOns = [];
+var fieldBurstRejected = false;
+var validNoteCaptureTask = null;
+var validMidiNotes = [];
+var validMidiPitchClasses = [];
+var validMidiVersion = 0;
+var derivedValidMidiNotes = [];
+var derivedValidPitchClasses = [];
+var lastActiveValidKey = "";
 
 // Tetrachords emits the active chord as ordinary MIDI notes on this same
 // input.  A value of 0 captures all channels; 1-16 selects one channel.
@@ -42,13 +114,20 @@ var channelData = [];
 var channelExpected = 0;
 
 var lastRoot = -1;
+var lastRootMidiNote = -1;
 var lastScale = "";
 var lastIntervalKey = "";
+var TRACE_PATH = "/private/tmp/tetrachords_receiver_trace.tsv";
+var traceLineCount = 0;
 
 var NOTE_NAMES = [
     "C", "C#", "D", "D#", "E", "F",
     "F#", "G", "G#", "A", "A#", "B"
 ];
+
+function loadbang() {
+    init();
+}
 
 // The Tetrachords mode byte is only an encoder state. The eight interval
 // bytes are authoritative. These names are used only for Ableton's scale UI.
@@ -73,15 +152,203 @@ var INTERVAL_TO_SCALE = {
 };
 
 function init() {
-    try {
-        song = new LiveAPI("live_set");
-        ready = true;
-        status("Ready — waiting for Tetrachords SysEx");
-    } catch (error) {
-        song = null;
-        ready = false;
-        status("LiveAPI init failed: " + error);
+    reset_runtime_trace("event\tdetails");
+    restore_controls_from_patcher();
+    // Receiving harmony does not depend on the optional Live scale bridge.
+    ready = true;
+    if(liveScaleSyncMode==='current')ensure_live_scale_bridge();
+    restore_valid_note_snapshots();
+    restore_external_field();
+    publish_active_valid_notes(1);
+    status(liveScaleBridge ? "Ready — waiting for Tetrachords harmony" :
+        "Harmony ready — Live Scale Sync unavailable");
+    update_valid_note_monitors();
+    if(typeof Task!=='undefined'){
+        if(diagnosticTask)diagnosticTask.cancel();
+        diagnosticTask=new Task(diagnostic_tick,this);diagnosticTask.schedule(1000);
     }
+}
+
+// Live keeps the menu values when an autowatched script recompiles, but the
+// new JavaScript context otherwise falls back to channel 0 (all/off). Read the
+// controls directly so the running filters always match the visible device.
+function restore_controls_from_patcher() {
+    var value;
+
+    value = patcher_control_value("chord_channel");
+    if (value !== null) {
+        chordCaptureChannel = menu_index_or_number(value, "all", 0, 16);
+    }
+
+    value = patcher_control_value("chord_hold");
+    if (value !== null) {
+        chordHoldMode = menu_choice(value, ["sysex", "gate"], chordHoldMode);
+    }
+
+    value = patcher_control_value("valid_note_source");
+    if (value !== null) {
+        validNoteSource = menu_choice(
+            value,
+            ["sysex", "midi"],
+            validNoteSource,
+            { "sysex intervals": "sysex", "midi note field": "midi" }
+        );
+    }
+
+    value = patcher_control_value("valid_note_channel");
+    if (value !== null) {
+        validNoteCaptureChannel = String(value).toLowerCase()==='separate track' ? 17 : menu_index_or_number(value, "off", 0, 17);
+    }
+    harmonyGlobal.validNoteCaptureChannel = validNoteCaptureChannel;
+
+    value = patcher_control_value("live_scale_sync");
+    if (value !== null) {
+        liveScaleSyncMode = menu_choice(
+            value,
+            ["off", "current"],
+            liveScaleSyncMode,
+            { "current scale": "current" }
+        );
+    }
+    harmonyGlobal.liveScaleSyncMode = liveScaleSyncMode;
+
+    runtime_trace(
+        "RESTORE_CONTROLS\tsource=" + validNoteSource +
+        " chordCh=" + chordCaptureChannel +
+        " fieldCh=" + validNoteCaptureChannel +
+        " hold=" + chordHoldMode +
+        " liveScale=" + liveScaleSyncMode
+    );
+}
+
+function patcher_control_value(varname) {
+    var object;
+    var value;
+
+    try {
+        if (!this.patcher || !this.patcher.getnamed) {
+            return null;
+        }
+        object = this.patcher.getnamed(varname);
+        if (!object || !object.getvalueof) {
+            return null;
+        }
+        value = object.getvalueof();
+        if (
+            value !== null && typeof value !== "string" &&
+            typeof value.length !== "undefined"
+        ) {
+            value = value.length > 0 ? value[0] : null;
+        }
+        return typeof value === "undefined" ? null : value;
+    } catch (error) {
+        runtime_trace("RESTORE_ERROR\t" + varname + "=" + error);
+        return null;
+    }
+}
+
+function menu_choice(value, orderedValues, fallback, aliases) {
+    var normalized;
+
+    if (typeof value === "number") {
+        return orderedValues[value | 0] !== undefined
+            ? orderedValues[value | 0]
+            : fallback;
+    }
+    normalized = String(value).toLowerCase();
+    if (aliases && aliases.hasOwnProperty(normalized)) {
+        normalized = aliases[normalized];
+    }
+    return orderedValues.indexOf(normalized) >= 0 ? normalized : fallback;
+}
+
+function menu_index_or_number(value, zeroLabel, minimum, maximum) {
+    var normalized;
+    var numeric;
+
+    if (typeof value === "number") {
+        numeric = value | 0;
+    } else {
+        normalized = String(value).toLowerCase();
+        numeric = normalized === zeroLabel ? 0 : (parseInt(normalized, 10) | 0);
+    }
+    return numeric >= minimum && numeric <= maximum ? numeric : minimum;
+}
+
+function validsource(value) {
+    value = String(value).toLowerCase().replace(/[^a-z]/g, "");
+    if (value === "sysexintervals" || value === "derived") {
+        value = "sysex";
+    } else if (
+        value === "8notemidi" || value === "notemidi" ||
+        value === "midinotefield" || value === "tetrachordsmidi"
+    ) {
+        value = "midi";
+    }
+
+    if (value !== "sysex" && value !== "midi") {
+        return;
+    }
+
+    validNoteSource = value;
+    runtime_trace("SOURCE\t" + validNoteSource);
+    restore_valid_note_snapshots();
+    publish_active_valid_notes(1);
+}
+
+function restore_valid_note_snapshots() {
+    var storedMidiNotes = harmonyGlobal.midiFieldNotes ||
+        harmonyGlobal.tetrachordsValidMidiNotes;
+    var storedMidiPitchClasses = harmonyGlobal.midiFieldPitchClasses ||
+        harmonyGlobal.tetrachordsValidPitchClasses;
+
+    if (
+        derivedValidMidiNotes.length === 0 &&
+        harmonyGlobal.derivedValidMidiNotes
+    ) {
+        derivedValidMidiNotes = arrayfromargs(
+            harmonyGlobal.derivedValidMidiNotes
+        );
+        derivedValidPitchClasses = arrayfromargs(
+            harmonyGlobal.derivedValidPitchClasses || []
+        );
+    }
+
+    if (validMidiNotes.length === 0 && storedMidiNotes) {
+        validMidiNotes = arrayfromargs(storedMidiNotes);
+        validMidiPitchClasses = arrayfromargs(storedMidiPitchClasses || []);
+    }
+}
+
+function validnotechannel(value) {
+    var channel;
+
+    if(String(value).toLowerCase()==='separate track'){channel=17;}
+    else if (value === "off" || value === "Off" || value === 0 || value === "0") {
+        channel = 0;
+    } else {
+        channel = value | 0;
+        if (channel < 1 || channel > 17) {
+            return;
+        }
+    }
+
+    abandon_pending_valid_notes();
+    validNoteCaptureChannel = channel;
+    if(channel===17){lastFieldPacket='';restore_external_field();}
+    harmonyGlobal.validNoteCaptureChannel = validNoteCaptureChannel;
+    runtime_trace("FIELD_CHANNEL\t" + validNoteCaptureChannel);
+    update_valid_note_monitors();
+    status(
+        validNoteCaptureChannel === 17 ? 'MIDI Note Field capture: Separate track' : validNoteCaptureChannel === 0
+            ? "MIDI Note Field capture: Off"
+            : "MIDI Note Field capture: channel " + validNoteCaptureChannel
+    );
+}
+
+function validwindow(value) {
+    validNoteCaptureWindowMs = Math.max(10, Math.min(50, value | 0));
+    status("MIDI Note Field capture window: " + validNoteCaptureWindowMs + " ms");
 }
 
 function chordchannel(value) {
@@ -124,8 +391,26 @@ function chordhold(value) {
 }
 
 function updatelive(v) {
-    updateLiveUI = (v | 0) ? 1 : 0;
-    status("Update Live scale/root: " + (updateLiveUI ? "on" : "off"));
+    livescalesync((v | 0) ? "current" : "off");
+}
+
+function livescalesync(value) {
+    liveScaleSyncMode = menu_choice(
+        value,
+        ["off", "current"],
+        liveScaleSyncMode,
+        { "current scale": "current", "on": "current" }
+    );
+    harmonyGlobal.liveScaleSyncMode = liveScaleSyncMode;
+    if (liveScaleSyncMode === "current") {
+        schedule_live_scale_sync(current_harmonic_state(), "enabled");
+    } else {
+        harmonyGlobal.liveScaleSyncStatus = "off";
+    }
+    status(
+        "Live Scale Sync: " +
+        (liveScaleSyncMode === "current" ? "Current Scale" : "Off")
+    );
 }
 
 function rebroadcast() {
@@ -136,7 +421,11 @@ function rebroadcast() {
             broadcast_harmony(harmonyGlobal.chordMessage);
             outlet(1, harmonyGlobal.chordMessage);
         }
-        status("Rebroadcast current harmony and chord");
+        if (harmonyGlobal.validNoteMessage) {
+            broadcast_harmony(harmonyGlobal.validNoteMessage);
+            outlet(1, harmonyGlobal.validNoteMessage);
+        }
+        status("Rebroadcast current harmony, chord and valid-note source");
     } else {
         status("No Tetrachords harmony received yet");
     }
@@ -150,14 +439,16 @@ function refresh() {
 
 function live(value) {
     if (value === "on" || value === 1 || value === "1") {
-        updatelive(1);
+        livescalesync("current");
     } else if (value === "off" || value === 0 || value === "0") {
-        updatelive(0);
+        livescalesync("off");
     }
 }
 
 function msg_int(value) {
     var v = value & 0xFF;
+    receiverDiagnostics.bytes++;
+    receiverDiagnostics.lastInput=new Date().getTime();
 
     // MIDI real-time bytes may occur inside SysEx and do not alter its state.
     if (v >= 0xF8) {
@@ -165,10 +456,13 @@ function msg_int(value) {
     }
 
     if (v === 0xF0) {
+        discardSysEx=false;
         clear_channel_parser();
         sysexBuffer = [v];
         return;
     }
+
+    if(discardSysEx){if(v===0xF7)discardSysEx=false;return;}
 
     if (sysexBuffer.length > 0) {
         if (v >= 0x80 && v !== 0xF7) {
@@ -179,6 +473,11 @@ function msg_int(value) {
         }
 
         sysexBuffer.push(v);
+        if(sysexBuffer.length>256){
+            receiverDiagnostics.rejected++;
+            runtime_trace('REJECT\toversized SysEx');
+            sysexBuffer=[];discardSysEx=v!==0xF7;return;
+        }
 
         if (v === 0xF7) {
             handle_sysex(sysexBuffer.slice(0));
@@ -209,6 +508,8 @@ function list() {
         bytes[0] === 0xF0 &&
         bytes[bytes.length - 1] === 0xF7
     ) {
+        receiverDiagnostics.bytes+=bytes.length;
+        receiverDiagnostics.lastInput=new Date().getTime();
         handle_sysex(bytes);
         return;
     }
@@ -220,6 +521,7 @@ function list() {
 
 function handle_sysex(message) {
     var root;
+    var rootMidiNote;
     var mode;
     var track;
     var intervals;
@@ -235,12 +537,24 @@ function handle_sysex(message) {
         message[4] !== 0x01 ||
         message[16] !== 0xF7
     ) {
+        receiverDiagnostics.rejected++;
+        runtime_trace('REJECT\tSysEx length/header '+message.length);
         status("Ignored non-matching SysEx (" + message.length + " bytes)");
         return;
     }
 
+    for(var byte=5;byte<16;byte++){
+        if(typeof message[byte]!=='number'||message[byte]!==Math.floor(message[byte])||message[byte]<0||message[byte]>127){
+            receiverDiagnostics.rejected++;runtime_trace('REJECT\tinvalid SysEx data byte');return;
+        }
+    }
+    receiverDiagnostics.sysex++;
+    receiverDiagnostics.lastInput=new Date().getTime();
+    runtime_trace('SYSEX\troot='+message[13]+' intervals='+message.slice(5,13).join(','));
+
     intervals = message.slice(5, 13);
-    root = (message[13] & 0x7F) % 12;
+    rootMidiNote = message[13] & 0x7F;
+    root = rootMidiNote % 12;
     mode = message[14] & 0x7F;
     track = message[15] & 0x7F;
     intervalKey = intervals.join(",");
@@ -253,7 +567,7 @@ function handle_sysex(message) {
         scaleName = "Major";
     }
 
-    apply_harmony(root, intervals, scaleName, track);
+    apply_harmony(root, intervals, scaleName, track, rootMidiNote);
 
     // Tetrachords chord notes may be short triggers rather than sustained
     // gates. In SysEx hold mode, begin a fresh capture epoch but keep the
@@ -289,16 +603,116 @@ function collect_channel_data(dataByte) {
     type = runningStatus & 0xF0;
     channel = (runningStatus & 0x0F) + 1;
 
+    note = channelData[0] & 0x7F;
+    velocity = channelData.length > 1 ? channelData[1] & 0x7F : 0;
+
+    if (type === 0x90 && velocity > 0) {
+        runtime_trace(
+            "MIDI_NOTE_ON\tch=" + channel + " note=" + note +
+            " velocity=" + velocity
+        );
+    }
+
     if (
+        validNoteCaptureChannel > 0 &&
+        channel === validNoteCaptureChannel &&
+        type === 0x90 && velocity > 0
+    ) {
+        capture_valid_field_note(note);
+    } else if (
+        channel !== validNoteCaptureChannel &&
         (chordCaptureChannel === 0 || chordCaptureChannel === channel) &&
         (type === 0x80 || type === 0x90)
     ) {
-        note = channelData[0] & 0x7F;
-        velocity = channelData[1] & 0x7F;
         update_chord_note(note, type === 0x90 && velocity > 0);
     }
 
     channelData = [];
+}
+
+function capture_valid_field_note(note) {
+    // Every short Note On burst is a complete replacement field. Note Offs
+    // are ignored, so an earlier collection can never be merged into a later
+    // smaller collection merely because its gates are still held.
+    if(fieldBurstRejected){schedule_valid_note_finalize();return;}
+    if(pendingValidNoteOns.length>=128){
+        pendingValidNoteOns=[];fieldBurstRejected=true;receiverDiagnostics.rejected++;
+        runtime_trace('REJECT\tMIDI field burst exceeds 128 notes');
+        schedule_valid_note_finalize();return;
+    }
+    pendingValidNoteOns.push(note | 0);
+    runtime_trace(
+        "FIELD_NOTE_ON\tnote=" + (note | 0) +
+        " pending=" + pendingValidNoteOns.join(",")
+    );
+    schedule_valid_note_finalize();
+    update_valid_note_monitors();
+}
+
+function schedule_valid_note_finalize() {
+    if (typeof Task === "undefined") {
+        return;
+    }
+
+    if (validNoteCaptureTask) {
+        validNoteCaptureTask.cancel();
+    }
+    validNoteCaptureTask = new Task(finalize_valid_note_capture, this);
+    validNoteCaptureTask.schedule(validNoteCaptureWindowMs);
+}
+
+function finalize_valid_note_capture() {
+    var candidate = pendingValidNoteOns.slice(0);
+
+    if (validNoteCaptureTask) {
+        validNoteCaptureTask.cancel();
+        validNoteCaptureTask = null;
+    }
+    pendingValidNoteOns = [];
+    if(fieldBurstRejected){fieldBurstRejected=false;status('Oversized field discarded — previous field retained');return;}
+
+    if (candidate.length === 0) {
+        update_valid_note_monitors();
+        status("No pending MIDI Note Field burst");
+        return;
+    }
+
+    commit_valid_field(candidate);
+}
+
+function commit_valid_field(candidate) {
+    if(!candidate.length||candidate.length>128){receiverDiagnostics.rejected++;return;}
+    for(var n=0;n<candidate.length;n++){
+        if(typeof candidate[n]!=='number'||candidate[n]!==Math.floor(candidate[n])||candidate[n]<0||candidate[n]>127){receiverDiagnostics.rejected++;return;}
+    }
+    receiverDiagnostics.fields++;
+    receiverDiagnostics.lastInput=new Date().getTime();
+    validMidiNotes = candidate.slice(0);
+    validMidiPitchClasses = unique_pitch_classes(validMidiNotes);
+    validMidiVersion += 1;
+    harmonyGlobal.midiFieldNotes = validMidiNotes.slice(0);
+    harmonyGlobal.midiFieldPitchClasses = validMidiPitchClasses.slice(0);
+    harmonyGlobal.midiFieldVersion = validMidiVersion;
+    runtime_trace(
+        "FIELD_COMMIT\tv=" + validMidiVersion +
+        " notes=" + validMidiNotes.join(",") +
+        " pcs=" + validMidiPitchClasses.join(",")
+    );
+    publish_active_valid_notes(0);
+}
+
+function abandon_pending_valid_notes() {
+    if (validNoteCaptureTask) {
+        validNoteCaptureTask.cancel();
+        validNoteCaptureTask = null;
+    }
+    pendingValidNoteOns = [];
+    fieldBurstRejected = false;
+}
+
+// Test/debug hook: treat the current collection window as elapsed.
+function flushvalidnotes() {
+    finalize_valid_note_capture();
 }
 
 function clear_channel_parser() {
@@ -356,11 +770,12 @@ function schedule_chord_publish() {
 
 function publish_active_chord() {
     var notes = active_chord_notes();
-    var chordKey = notes.join(",");
+    var chordKey;
     var root = typeof harmonyGlobal.root === "undefined"
         ? 0 : positive_mod(harmonyGlobal.root | 0, 12);
     var pitchClasses;
     var message;
+    chordKey=root+'|'+notes.join(',');
 
     chordPublishTask = null;
     if (chordKey === lastChordKey) {
@@ -368,7 +783,7 @@ function publish_active_chord() {
     }
 
     lastChordKey = chordKey;
-    chordVersion += 1;
+    chordVersion = Math.max(chordVersion,Number(harmonyGlobal.chordVersion)||0)+1;
     pitchClasses = unique_pitch_classes(notes);
     message = ["chord", chordVersion, root].concat(notes);
 
@@ -429,13 +844,19 @@ function clear_active_chord() {
     publish_active_chord();
 }
 
-function apply_harmony(root, intervals, scaleName, track) {
+function apply_harmony(root, intervals, scaleName, track, rootMidiNote) {
     var intervalKey = intervals.join(",");
     var legalPitchClasses;
     var message;
+    var i;
+
+    if (typeof rootMidiNote === "undefined") {
+        rootMidiNote = 60 + positive_mod(root, 12);
+    }
 
     if (
         root === lastRoot &&
+        rootMidiNote === lastRootMidiNote &&
         scaleName === lastScale &&
         intervalKey === lastIntervalKey
     ) {
@@ -443,10 +864,18 @@ function apply_harmony(root, intervals, scaleName, track) {
     }
 
     lastRoot = root;
+    lastRootMidiNote = rootMidiNote;
     lastScale = scaleName;
     lastIntervalKey = intervalKey;
     legalPitchClasses = build_legal_pitch_classes(root, intervals);
-    version += 1;
+    derivedValidMidiNotes = [];
+    for (i = 0; i < intervals.length; i++) {
+        derivedValidMidiNotes.push(
+            Math.max(0, Math.min(127, (rootMidiNote | 0) + (intervals[i] | 0)))
+        );
+    }
+    derivedValidPitchClasses = legalPitchClasses.slice(0);
+    version = Math.max(version,Number(harmonyGlobal.version)||0)+1;
 
     // The list format is:
     // harmony <version> <root> <pc1> <pc2> ...
@@ -456,9 +885,14 @@ function apply_harmony(root, intervals, scaleName, track) {
     harmonyGlobal.root = root;
     harmonyGlobal.intervals = intervals.slice(0);
     harmonyGlobal.legalPitchClasses = legalPitchClasses.slice(0);
+    harmonyGlobal.derivedValidMidiNotes = derivedValidMidiNotes.slice(0);
+    harmonyGlobal.derivedValidPitchClasses = derivedValidPitchClasses.slice(0);
     harmonyGlobal.scaleName = scaleName;
     harmonyGlobal.track = track;
     harmonyGlobal.message = message;
+    // Gate-following chord notes can stay held across a root metadata change.
+    // Republish that metadata without requiring another Note On.
+    if(chordHoldMode==='gate'&&active_chord_notes().length)schedule_chord_publish();
 
     // Immediately send the complete harmony payload to loaded subscribers.
     // The quantizer accepts: harmony <version> <root> <pc1> <pc2> ...
@@ -467,25 +901,237 @@ function apply_harmony(root, intervals, scaleName, track) {
     // Visible/debug output from the receiver device.
     outlet(1, message);
 
-    if (ready && updateLiveUI) {
-        try {
-            song.set("scale_mode", 1);
-            song.set("root_note", root);
-            song.set("scale_name", scaleName);
-        } catch (error) {
-            status(
-                "Harmony broadcast, but Live scale UI update failed: " + error
-            );
-            return;
-        }
-    }
+    publish_active_valid_notes(0);
 
     status(
         "Legal notes: " +
         pitch_class_names(legalPitchClasses).join(" ") +
         " | root " + NOTE_NAMES[root] +
-        " | Live label " + scaleName
+        " | SysEx label " + scaleName
     );
+}
+
+function publish_active_valid_notes(force) {
+    var activeMidiNotes = validNoteSource === "midi"
+        ? validMidiNotes.slice(0) : derivedValidMidiNotes.slice(0);
+    var activePitchClasses = validNoteSource === "midi"
+        ? validMidiPitchClasses.slice(0) : derivedValidPitchClasses.slice(0);
+    var root = typeof harmonyGlobal.root === "undefined"
+        ? 0 : positive_mod(harmonyGlobal.root | 0, 12);
+    var key = validNoteSource + "|" + root + "|" + activeMidiNotes.join(",") +
+        "|" + activePitchClasses.join(",");
+    var message;
+
+    if (activeMidiNotes.length === 0 || activePitchClasses.length === 0) {
+        update_valid_note_monitors();
+        status(
+            valid_source_label() +
+            " has no note collection yet — previous active collection retained"
+        );
+        return;
+    }
+
+    harmonyGlobal.validNoteSource = validNoteSource;
+    harmonyGlobal.activeValidMidiNotes = activeMidiNotes.slice(0);
+    harmonyGlobal.activeValidPitchClasses = activePitchClasses.slice(0);
+
+    if (!force && key === lastActiveValidKey) {
+        update_valid_note_monitors();
+        return;
+    }
+
+    lastActiveValidKey = key;
+    activeValidVersion = Math.max(activeValidVersion,Number(harmonyGlobal.activeValidVersion)||0)+1;
+    receiverDiagnostics.published++;
+    receiverDiagnostics.lastPublish=new Date().getTime();
+    message = ["validnotes", activeValidVersion, root, validNoteSource]
+        .concat(activePitchClasses);
+    runtime_trace(
+        "PUBLISH\tv=" + activeValidVersion + " source=" + validNoteSource +
+        " root=" + root + " pcs=" + activePitchClasses.join(",")
+    );
+
+    harmonyGlobal.activeValidVersion = activeValidVersion;
+    harmonyGlobal.validNoteMessage = message;
+    broadcast_harmony(message);
+    outlet(1, message);
+    update_valid_note_monitors();
+    schedule_live_scale_sync(current_harmonic_state(), "active-valid-notes");
+
+    if (validNoteSource === "midi" && activeMidiNotes.length === 0) {
+        status("MIDI Note Field selected — waiting for a note collection");
+    } else {
+        status(
+            "Active valid notes: " + valid_source_label() + " | " +
+            midi_note_names(activeMidiNotes)
+        );
+    }
+}
+
+function current_harmonic_state() {
+    var rootAvailable = typeof harmonyGlobal.root !== "undefined";
+    return {
+        rootPitchClass: rootAvailable
+            ? positive_mod(harmonyGlobal.root | 0, 12) : null,
+        validPitchClasses: harmonyGlobal.activeValidPitchClasses
+            ? Array.prototype.slice.call(harmonyGlobal.activeValidPitchClasses)
+            : [],
+        validMidiNotes: harmonyGlobal.activeValidMidiNotes
+            ? Array.prototype.slice.call(harmonyGlobal.activeValidMidiNotes)
+            : [],
+        source: validNoteSource === "midi" ? "valid_note_channel" : "sysex",
+        sysexVersion: version,
+        midiFieldVersion: validMidiVersion,
+        activeValidVersion: activeValidVersion
+    };
+}
+
+function schedule_live_scale_sync(state, reason) {
+    if (!ready || liveScaleSyncMode !== "current") {
+        return;
+    }
+    if(!ensure_live_scale_bridge()||!liveScaleMatcher)return;
+    pendingLiveScaleState = { state: state, reason: reason };
+    if (typeof Task === "undefined") {
+        perform_live_scale_sync();
+        return;
+    }
+    if (liveScaleSyncTask) {
+        liveScaleSyncTask.cancel();
+    }
+    liveScaleSyncTask = new Task(perform_live_scale_sync, this);
+    liveScaleSyncTask.schedule(liveScaleCoalesceMs);
+}
+
+function perform_live_scale_sync() {
+    var pending = pendingLiveScaleState;
+    var match;
+    var result;
+    liveScaleSyncTask = null;
+    pendingLiveScaleState = null;
+    if (!pending || liveScaleSyncMode !== "current" || !liveScaleBridge) {
+        return;
+    }
+    match = liveScaleMatcher.match(pending.state);
+    harmonyGlobal.liveScaleMatch = match;
+    harmonyGlobal.liveScaleMatchType = match.matchType;
+    harmonyGlobal.liveScaleName = match.scaleName;
+    harmonyGlobal.liveScaleRoot = match.rootNote;
+    harmonyGlobal.liveScaleMissingPitchClasses =
+        match.missingPitchClasses.slice(0);
+    harmonyGlobal.liveScaleExtraPitchClasses = match.extraPitchClasses.slice(0);
+    harmonyGlobal.liveScaleLibraryVersion = LIVE_SCALE_LIBRARY_VERSION;
+    harmonyGlobal.liveScaleBridgeVersion = LIVE_SCALE_BRIDGE_VERSION;
+    try {
+        result = liveScaleBridge.setCurrentScale(match);
+        harmonyGlobal.liveScaleWriteResult = result;
+        harmonyGlobal.liveScaleSyncStatus = result.skipped
+            ? "skipped" : (result.verified ? "success" : "unverified");
+        runtime_trace(
+            "LIVE_SCALE\treason=" + pending.reason +
+            " source=" + pending.state.source +
+            " match=" + match.matchType +
+            " root=" + match.rootNote +
+            " scale=" + match.scaleName +
+            " missing=" + match.missingPitchClasses.join(",") +
+            " extra=" + match.extraPitchClasses.join(",") +
+            " status=" + harmonyGlobal.liveScaleSyncStatus
+        );
+    } catch (error) {
+        harmonyGlobal.liveScaleSyncStatus = "failed";
+        harmonyGlobal.liveScaleSyncError = String(error);
+        runtime_trace("LIVE_SCALE_ERROR\t" + error);
+        status("Harmony active; Live Current Scale sync failed: " + error);
+    }
+}
+
+function handle_live_scale_bridge_event(event) {
+    if (!event) {
+        return;
+    }
+    if (event.type === "observed") {
+        harmonyGlobal.observedLiveScale = event.state;
+    } else if (event.type === "warning") {
+        harmonyGlobal.liveScaleBridgeWarning = event.warning;
+    }
+    // Live observations are deliberately not fed into receiver state. This
+    // makes Tetrachords authoritative and structurally prevents feedback.
+}
+
+function update_valid_note_monitors() {
+    var midiState;
+    var activeNotes = validNoteSource === "midi"
+        ? validMidiNotes : derivedValidMidiNotes;
+
+    outlet(
+        2,
+        "set",
+        "SysEx Intervals: " +
+        (derivedValidMidiNotes.length > 0
+            ? midi_note_names(derivedValidMidiNotes)
+            : "waiting")
+    );
+
+    if (validNoteCaptureChannel === 17) {
+        midiState='Separate track • '+(validMidiNotes.length ? validMidiNotes.length+' notes • '+midi_note_names(validMidiNotes) : 'waiting for Note Field Input');
+    } else if (validNoteCaptureChannel === 0) {
+        midiState = "Off";
+    } else if (pendingValidNoteOns.length > 0) {
+        midiState = "ch " + validNoteCaptureChannel + " • " +
+            pendingValidNoteOns.length + " notes pending";
+    } else if (validMidiNotes.length > 0) {
+        midiState = "ch " + validNoteCaptureChannel + " • " +
+            validMidiNotes.length + " notes • " + midi_note_names(validMidiNotes);
+    } else {
+        midiState = "ch " + validNoteCaptureChannel + " • waiting for notes";
+    }
+    outlet(3, "set", "MIDI Note Field: " + midiState);
+
+    outlet(
+        4,
+        "set",
+        "Active: " + valid_source_label() + " • " +
+        (activeNotes.length > 0 ? midi_note_names(activeNotes) : "no complete set") +
+        comparison_label()
+    );
+}
+
+function valid_source_label() {
+    return validNoteSource === "midi" ? "MIDI Note Field" : "SysEx Intervals";
+}
+
+function comparison_label() {
+    if (derivedValidMidiNotes.length === 0 || validMidiNotes.length === 0) {
+        return "";
+    }
+
+    return arrays_equal(derivedValidMidiNotes, validMidiNotes)
+        ? " • EXACT RAW MATCH"
+        : pitch_class_sets_equal(
+            derivedValidPitchClasses,
+            validMidiPitchClasses
+        )
+            ? " • SAME PITCH CLASSES"
+            : " • DIFFERENT";
+}
+
+function pitch_class_sets_equal(left, right) {
+    var leftSorted = left.slice(0).sort(function (a, b) { return a - b; });
+    var rightSorted = right.slice(0).sort(function (a, b) { return a - b; });
+    return arrays_equal(leftSorted, rightSorted);
+}
+
+function arrays_equal(left, right) {
+    var i;
+    if (left.length !== right.length) {
+        return false;
+    }
+    for (i = 0; i < left.length; i++) {
+        if ((left[i] | 0) !== (right[i] | 0)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function broadcast_harmony(message) {
@@ -547,4 +1193,47 @@ function positive_mod(value, modulus) {
 
 function status(text) {
     outlet(0, "set", text);
+}
+
+function reset_runtime_trace(header) {
+    var file;
+    traceLineCount = 0;
+    if (typeof File === "undefined") {
+        return;
+    }
+    file = new File(TRACE_PATH, "write");
+    if (file.isopen) {
+        file.eof = 0;
+        file.position = 0;
+        file.writeline(header);
+        file.close();
+    }
+}
+
+function runtime_trace(line) {
+    var file;
+    if (typeof File === "undefined") {
+        return;
+    }
+    if(traceLineCount>=1000)reset_runtime_trace('event\tdetails');
+    file = new File(TRACE_PATH, "readwrite");
+    if (!file.isopen) {
+        return;
+    }
+    file.position = file.eof;
+    file.writeline(String(new Date().getTime()) + "\t" + line);
+    file.close();
+    traceLineCount += 1;
+}
+
+function notifydeleted(){
+    if(diagnosticTask)diagnosticTask.cancel();
+    if(chordPublishTask)chordPublishTask.cancel();
+    if(validNoteCaptureTask)validNoteCaptureTask.cancel();
+    if(liveScaleSyncTask)liveScaleSyncTask.cancel();
+    if(liveScaleBridge&&liveScaleBridge.observers){
+        for(var i=0;i<liveScaleBridge.observers.length;i++){
+            try{liveScaleBridge.observers[i].property='';}catch(e){}
+        }
+    }
 }

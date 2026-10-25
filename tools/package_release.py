@@ -42,9 +42,10 @@ def main():
     actual = tuple(sum(name.endswith(ext) for name in files) for ext in (".amxd", ".js"))
     if actual != expected:
         raise RuntimeError(f"Unexpected AMXD/script inventory: {actual}, expected {expected}")
-    for relative in ("README.md", "docs/RELEASE_NOTES.md", "docs/LATENCY.md",
-                     "docs/LATENCY_AUDIT.md", "docs/PLINKY_HARMONY_RECEIVER.md",
-                     "docs/VOICE_LEADING_V3.md", "LICENSE", "LICENSE.md"):
+    documentation = [path.relative_to(ROOT).as_posix()
+                     for path in sorted((ROOT / "docs").iterdir())
+                     if path.is_file() and path.suffix in (".md", ".json")]
+    for relative in ("README.md", "LICENSE", "LICENSE.md", *documentation):
         path = ROOT / relative
         if path.is_file():
             files[relative] = path.read_bytes()
@@ -96,4 +97,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

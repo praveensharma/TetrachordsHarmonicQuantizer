@@ -1,6 +1,6 @@
 # Tetrachords Harmonic Quantizer and Chord Tools
 
-This package contains three Max for Live MIDI effects:
+This v1 development-beta package contains five Max for Live MIDI effects:
 
 1. **Tetrachords Harmony Receiver** — parses the 17-byte SysEx message,
    captures the active chord's MIDI notes, optionally captures an authoritative
@@ -10,11 +10,19 @@ This package contains three Max for Live MIDI effects:
    channel, and sends the result to the selected Live MIDI output.
 3. **Tetrachords Note Field Input** — captures the optional dedicated
    Tetrachords MIDI note-field track and forwards atomic bursts to the receiver.
+4. **Plinky Harmony Receiver** — decodes Chords root/chord/scale NRPN updates
+   into the same shared harmonic state. Use one active harmony publisher.
+5. **Harmonic Motion** — optional ensemble voice-motion controls for the
+   stateful quantizer; it does not generate MIDI notes itself.
 
 No `All Ins` routing is required.
 
 See [Voice Separation v2](docs/VOICE_SEPARATION.md) for coordinated scoring,
 active-pitch semantics, and the ROTA integration boundary.
+See [current beta notes](docs/RELEASE_NOTES.md),
+[Plinky setup](docs/PLINKY_HARMONY_RECEIVER.md),
+[Voice Leading v3](docs/VOICE_LEADING_V3.md), and
+[measured latency and limitations](docs/LATENCY_AUDIT.md).
 
 ## Package contents
 
@@ -29,6 +37,14 @@ Note_Field_Input/
   Tetrachords Note Field Input.maxpat
   note_field_input.js
 
+Plinky_Harmony_Receiver/
+  Plinky Harmony Receiver.maxpat
+  plinky_harmony_receiver.js
+
+Harmonic_Motion/
+  Harmonic Motion.maxpat
+  harmonic_motion.js
+
 Harmonic_Quantizer/
   Harmonic Quantizer.maxpat
   harmonic_quantizer.js
@@ -36,6 +52,10 @@ Harmonic_Quantizer/
 dist/
   Tetrachords Harmony Receiver.amxd
   Harmonic Quantizer.amxd
+  Tetrachords Note Field Input.amxd
+  Plinky Harmony Receiver.amxd
+  Harmonic Motion.amxd
+  ...all required JavaScript sidecars
 
 tests/
   test_live_scale_sync.js
@@ -43,9 +63,9 @@ tests/
   test_max_js_engines.js
 ```
 
-The `.amxd` files are genuine Max for Live MIDI-effect containers created and
-saved through Live Suite's bundled Max editor. The `.maxpat` files are editable
-source copies of their patchers.
+The `.amxd` files are genuine Max for Live MIDI-effect containers built from the
+committed container seeds and editable `.maxpat` source patches. They are not
+frozen: keep their companion JavaScript files beside them.
 
 ## Install
 
@@ -53,8 +73,28 @@ The easiest installation is the GUI-free builder, which installs each `.amxd`
 beside its companion `.js` file and preserves backups of existing devices:
 
 ```bash
+python3 tools/build_amxd.py
+python3 tools/build_amxd.py --verify-dist
 python3 tools/build_amxd.py --install
 python3 tools/build_amxd.py --verify-installed
+```
+
+Installation also rebuilds `dist/` first, then installs those exact AMXD bytes.
+Building/verifying `dist/` alone does not touch your User Library or running Set.
+No Max editor is needed. Python 3.10+ and Node.js are used for build/tests.
+
+For a portable manual bundle, copy **all files in `dist/` together** into one
+new User Library folder. Do not copy only an AMXD: the monitor, scale bridge,
+matcher and device JavaScript dependencies are required. Reopen/reload devices
+to adopt changed scripts/patch definitions, and back up working Sets first.
+
+Run all automated checks before sharing a build:
+
+```bash
+python3 tools/build_amxd.py --verify-dist
+python3 tests/test_distribution.py
+python3 tests/test_latency_fixture.py
+for test in tests/test_*.js; do node "$test" || exit 1; done
 ```
 
 For a manual installation, copy each file from `dist/` beside the matching

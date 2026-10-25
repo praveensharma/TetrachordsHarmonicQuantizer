@@ -27,6 +27,14 @@ function visual_message(selector, payload) {
     } catch(e) {}
 }
 function visual_note(input,output,channel,reason) {
+    if(typeof Task !== 'undefined'){
+        pendingVisualNotes.push([input,output,channel,reason]);
+        if(pendingVisualNotes.length>16){pendingVisualNotes.shift();}
+        return;
+    }
+    visual_note_now(input,output,channel,reason);
+}
+function visual_note_now(input,output,channel,reason) {
     try {
         ['monitor-compact','monitor-detail'].forEach(function(name){
             var display=this.patcher.getnamed(name);
@@ -78,6 +86,47 @@ var inputStabilityMs = 20;
 var heldNotes = {};
 var pendingStableNotes = {};
 var inputStabilityTask = null;
+var samePitchMode = "legato";
+var motionGlobal = new Global("tetrachords_motion_v1");
+var motionDecision = {base:0, spread:0, effective:0, status:"No motion controller"};
+
+function samepitch(value) {
+    var next = value === 1 || value === "retrigger" ? "retrigger" : "legato";
+    // Existing assignments keep their release mapping when this is automated.
+    samePitchMode = next;
+}
+
+function read_motion() {
+    var result = {base:0, spread:0, effective:0, status:"No motion controller"};
+    if (!ensembleGroup) { return result; }
+    try {
+        var entries = JSON.parse(motionGlobal.snapshot || "{}");
+        var matches = [], now = new Date().getTime();
+        for (var id in entries) {
+            var e = entries[id];
+            if (e.group === ensembleGroup && now-e.seen < 2000) { matches.push(e); }
+        }
+        if (matches.length !== 1) {
+            result.status = matches.length ? "Motion controller conflict — neutral" : result.status;
+            return result;
+        }
+        var entry=matches[0], weights=[-1,-0.4,0.4,1];
+        result.base=clamp(Number(entry.biases[ensemblePart-1]) || 0,-100,100);
+        result.spread=clamp(Number(entry.spread) || 0,-100,100)*weights[ensemblePart-1];
+        result.effective=clamp(result.base+result.spread,-100,100);
+        result.status="Voice "+"ABCD".charAt(ensemblePart-1);
+    } catch(e) {}
+    return result;
+}
+
+function direction_cost(candidate, channel) {
+    var prior=voiceState[channel];
+    if (!prior || quantizerMode !== "statefulnearest") { return 0; }
+    var delta=candidate-prior.output, bias=motionDecision.effective/100;
+    // Penalize contrary movement only. Staying and moving with the bias have
+    // zero cost; bounded pressure never grows into an octave ratchet.
+    return delta*bias < 0 ? 12*Math.abs(bias)*Math.min(Math.abs(delta),4)/4 : 0;
+}
 
 // Clear menu labels map to the original internal identifiers so the DSP logic
 // remains stable while the presentation names describe the musical behavior.
@@ -119,6 +168,32 @@ var harmonyPollTask = null;
 var TRACE_PATH = "/private/tmp/harmonic_quantizer_trace.tsv";
 var traceLineCount = 0;
 var traceInstance = Math.floor(Math.random() * 0x7fffffff).toString(36);
+var traceQueue = [], pendingVisualNotes = [], pendingStatus = null, pendingEnsembleStatus = null;
+var latencySamples=[], latencyLastReport=0;
+function latency_record(arrival){
+    if(typeof arrival!=='number'){return;}
+    latencySamples.push(Math.max(0,new Date().getTime()-arrival));
+    if(latencySamples.length>512){latencySamples.shift();}
+}
+function latencyreport(){
+    var samples=latencySamples.slice().sort(function(a,b){return a-b;});
+    var n=samples.length;
+    return JSON.stringify({samples:n,medianMs:n?samples[Math.floor((n-1)*.5)]:null,
+        p95Ms:n?samples[Math.ceil(n*.95)-1]:null,maxMs:n?samples[n-1]:null,
+        scope:'quantizer Note On callback to final MIDI bytes; includes settle/separation; excludes Live buffers/hardware'});
+}
+function flush_diagnostics(){
+    var now=new Date().getTime();
+    if(latencySamples.length && now-latencyLastReport>=5000){
+        runtime_trace('LATENCY\t'+latencyreport());latencyLastReport=now;
+    }
+    flush_runtime_trace();
+    var events=pendingVisualNotes;pendingVisualNotes=[];
+    // Bound display work even if the source has a burst of MIDI events.
+    for(var i=0;i<events.length;i++){visual_note_now.apply(this,events[i]);}
+    if(pendingStatus!==null){outlet(1,'set',pendingStatus);pendingStatus=null;}
+    if(pendingEnsembleStatus!==null){outlet(2,'set',pendingEnsembleStatus);pendingEnsembleStatus=null;}
+}
 
 // Store JSON, rather than cross-context JS objects, in Max Global. Each device
 // owns one ensemble part, regardless of the incoming or outgoing MIDI channel.
@@ -133,6 +208,11 @@ var ensembleSerial = 0;
 var ensembleDelivering = false;
 var ensembleMonitorText = "";
 var ENSEMBLE_WINDOW_MS = 4;
+function ensemble_schedule(){
+    if(ensembleTask && ensembleQueue.length){
+        ensembleTask.schedule(Math.max(1,ensembleQueue[0].due-new Date().getTime()));
+    }
+}
 
 function ensemble_read() {
     try { return JSON.parse(ensembleGlobal.snapshot || "{}"); }
@@ -146,21 +226,21 @@ function ensemble_write(state) {
 function ensemble_group(state) {
     var key = String(ensembleGroup);
     if (!state[key]) {
-        state[key] = {epoch: 0, members: {}, pending: [], results: {}, deadline: 0};
+        state[key] = {epoch: 0, members: {}, pending: [], results: {}, deadline: 0, priority: 1};
     }
     return state[key];
 }
 
-function ensemble_refresh() {
+function ensemble_refresh(silent) {
     // Display indices are separate from persisted group/part numeric values.
-    try {
+    try { if(!silent){
         var groupMenu=this.patcher.getnamed('ensemble_group_selector');
         var voiceMenu=this.patcher.getnamed('ensemble_part_selector');
         if(groupMenu){groupMenu.message('set',ensembleGroup);}
         if(voiceMenu){voiceMenu.message('set',ensemblePart-1);}
-    } catch(e) {}
+    }} catch(e) {}
     if (!ensembleGroup) {
-        ensemble_monitor("Independent — no ensemble coordination");
+        if(!silent){ensemble_monitor("Independent — no ensemble coordination");}
         return;
     }
     var state = ensemble_read();
@@ -180,7 +260,7 @@ function ensemble_refresh() {
         lastVoiceDecision = {};
         ensembleEpoch = group.epoch;
     }
-    var member = group.members[traceInstance] || {part: ensemblePart, note: null};
+    var member = group.members[traceInstance] || {part: ensemblePart, note: null, active: []};
     member.seen = now;
     member.part = ensemblePart;
     group.members[traceInstance] = member;
@@ -206,7 +286,8 @@ function ensemble_refresh() {
 function ensemble_monitor(text) {
     if (text !== ensembleMonitorText) {
         ensembleMonitorText = text;
-        outlet(2, "set", text);
+        if(typeof Task!=='undefined'){pendingEnsembleStatus=text;}
+        else{outlet(2, "set", text);}
     }
 }
 
@@ -247,42 +328,68 @@ function resetensemble() {
     var group = ensemble_group(state);
     ensemble_resolve(group);
     group.epoch++;
-    for (var id in group.members) { group.members[id].note = null; }
+    for (var id in group.members) { group.members[id].note = null; group.members[id].active = []; }
     ensemble_write(state);
     ensemble_refresh();
 }
 
-function ensemble_options(base, input) {
+function ensemble_options(base, input, channel) {
     var pcs = (quantizerMode === "harmonizer" || quantizerMode === "chordnearest") &&
         activeChordNotes.length ? active_chord_pitch_classes() : legalPitchClasses;
-    var result = [{note: base, cost: 0}];
+    function option(note) {
+        var terms=candidate_costs(note,input,channel);
+        return {note:note,cost:terms.input+terms.continuity+terms.direction,terms:terms};
+    }
+    var result = [option(base)];
     if (!pcs.length || !separationAmount) { return result; }
     // A bounded soft preference: never leap more than six semitones simply to
     // avoid another part. Octave doubling remains allowed in this first version.
     for (var n = Math.max(0, base - 6); n <= Math.min(127, base + 6); n++) {
         if (n === base || pcs.indexOf(n % 12) < 0) { continue; }
-        if (registerMode === "limited" && (n > registerHigh || n < Math.min(base, registerLow))) { continue; }
+        if (registerMode === "limited" && (n > registerHigh || n < registerLow)) { continue; }
         if (quantizerMode === "up" && n < input) { continue; }
         if (quantizerMode === "down" && n > input) { continue; }
-        result.push({note: n, cost: (n - base) * (n - base)});
+        result.push(option(n));
     }
     return result;
 }
 
-function ensemble_enqueue(channel, input, velocity, base) {
+function ensemble_candidate_cost(candidate, input, channel) {
+    var terms=candidate_costs(candidate,input,channel);
+    return terms.input+terms.continuity+terms.direction;
+}
+
+function candidate_costs(candidate, input, channel) {
+    var prior = voiceState[channel] || null;
+    var inputDistance = Math.abs(candidate - input);
+    var terms = {input:inputDistance*inputDistance, continuity:0, direction:direction_cost(candidate,channel)};
+    if (quantizerMode !== "statefulnearest" || !prior || continuityAmount === 0) {
+        return terms;
+    }
+    var continuity = continuityAmount / 100;
+    var previousDistance = Math.abs(candidate - prior.output);
+    terms.continuity = 3 * continuity * previousDistance * previousDistance;
+    if (prior.version !== harmonyVersion && candidate === prior.output && is_legal_note(candidate)) {
+        terms.continuity -= 64 * continuity;
+    }
+    return terms;
+}
+
+function ensemble_enqueue(channel, input, velocity, base, arrival) {
     var state = ensemble_read();
     var group = ensemble_group(state);
     var id = traceInstance + ":" + (++ensembleSerial);
     group.pending.push({id: id, owner: traceInstance, part: ensemblePart,
-        options: ensemble_options(base, input), separation: separationAmount,
+        options: ensemble_options(base, input, channel), separation: separationAmount,
         upward: preferUpwardTie, serial: ensembleSerial});
     if (!group.deadline) { group.deadline = new Date().getTime() + ENSEMBLE_WINDOW_MS; }
     ensemble_write(state);
     ensembleQueue.push({id: id, channel: channel, input: input, velocity: velocity,
-        due: new Date().getTime() + ENSEMBLE_WINDOW_MS, epoch: group.epoch});
+        due: new Date().getTime() + ENSEMBLE_WINDOW_MS, epoch: group.epoch,
+        motion:motionDecision,arrival:arrival});
     if (typeof Task !== "undefined") {
         if (!ensembleTask) { ensembleTask = new Task(ensemble_tick, this); }
-        ensembleTask.schedule(1);
+        ensemble_schedule();
     } else { ensemble_flush(true); }
 }
 
@@ -295,43 +402,72 @@ function ensemble_resolve(group) {
     for (id in group.members) {
         var member = group.members[id];
         counts[member.part] = (counts[member.part] || 0) + 1;
-        occupied[id] = member.note;
+        occupied[id] = member.active && member.active.length ? member.active.slice(0) : [];
     }
-    // Replace stale assignments for all parts participating in this batch.
-    for (var i = 0; i < jobs.length; i++) { delete occupied[jobs[i].owner]; }
-    jobs.sort(function (a, b) { return a.part - b.part || a.serial - b.serial; });
+    var priority = clamp(group.priority || 1, 1, 4);
+    var i;
+    jobs.sort(function (a, b) {
+        var ar=(a.part-priority+4)%4,br=(b.part-priority+4)%4;
+        return ar-br || a.serial-b.serial;
+    });
     for (i = 0; i < jobs.length; i++) {
         var job = jobs[i];
         var best = job.options[0].note;
         var bestCost = Infinity;
+        var bestTerms = null;
+        var baseCollision = false;
         for (var j = 0; j < job.options.length; j++) {
             var option = job.options[j];
             var cost = option.cost;
             if (counts[job.part] === 1) {
                 for (id in occupied) {
-                    if (id !== job.owner && occupied[id] === option.note) { cost += 36 * job.separation / 100; }
+                    if (id !== job.owner && occupied[id].indexOf(option.note) >= 0) {
+                        cost += 36 * job.separation / 100;
+                        if (j === 0) { baseCollision = true; }
+                    }
                 }
             } else if (j > 0) { continue; } // Duplicate part IDs: transparent, visible conflict.
             if (cost < bestCost || (cost === bestCost &&
                 (job.upward ? option.note > best : option.note < best))) {
                 best = option.note;
                 bestCost = cost;
+                var terms=option.terms || {input:option.cost,continuity:0,direction:0};
+                bestTerms={input:terms.input,continuity:terms.continuity,
+                    direction:terms.direction,separation:cost-option.cost};
             }
         }
         if (!group.results[job.owner]) { group.results[job.owner] = {}; }
-        group.results[job.owner][job.id] = best;
-        occupied[job.owner] = best;
+        group.results[job.owner][job.id] = {note:best, avoided:baseCollision && best !== job.options[0].note,
+            original:job.options[0].note, cost:bestCost,terms:bestTerms};
+        occupied["planned:"+job.id] = [best];
         if (group.members[job.owner]) { group.members[job.owner].note = best; }
     }
     group.pending = [];
     group.deadline = 0;
+    group.priority = priority % 4 + 1;
+}
+
+function ensemble_active_add(note) {
+    if (!ensembleGroup) { return; }
+    var state=ensemble_read(),group=ensemble_group(state);
+    var member=group.members[traceInstance] || {part:ensemblePart,note:null,active:[]};
+    if (!member.active) { member.active=[]; }
+    member.active.push(note);member.note=note;member.seen=new Date().getTime();
+    group.members[traceInstance]=member;ensemble_write(state);
+}
+function ensemble_active_remove(note) {
+    if (!ensembleGroup) { return; }
+    var state=ensemble_read(),group=ensemble_group(state),member=group.members[traceInstance];
+    if (!member || !member.active) { return; }
+    var index=member.active.indexOf(note);if(index>=0){member.active.splice(index,1);}
+    ensemble_write(state);
 }
 
 function ensemble_tick() { ensemble_flush(false); }
 
 function ensemble_flush(force) {
     if (!ensembleGroup || !ensembleQueue.length) { return; }
-    ensemble_refresh();
+    ensemble_refresh(true);
     var state = ensemble_read();
     var group = ensemble_group(state);
     if (force || new Date().getTime() >= group.deadline) { ensemble_resolve(group); }
@@ -342,7 +478,15 @@ function ensemble_flush(force) {
         if (event.id && !ready.hasOwnProperty(event.id)) { break; }
         if (!force && new Date().getTime() < event.due) { break; }
         ensembleQueue.shift();
-        if (event.id) { event.output = ready[event.id]; delete ready[event.id]; }
+        if (event.id) {
+            var decision=ready[event.id];event.output=typeof decision === "object" ? decision.note : decision;
+            event.costs=decision && decision.terms;
+            if (decision && decision.avoided) {
+                runtime_trace("SEPARATION\tpart="+ensemblePart+" avoided="+decision.original+
+                    " chose="+decision.note+" score="+decision.cost);
+            }
+            delete ready[event.id];
+        }
         deliveries.push(event);
     }
     group.results[traceInstance] = ready;
@@ -350,12 +494,15 @@ function ensemble_flush(force) {
     ensembleDelivering = true;
     for (var i = 0; i < deliveries.length; i++) {
         var item = deliveries[i];
-        if (item.id) { deliver_note_on(item.channel, item.input, item.velocity, item.output, item.epoch === group.epoch); }
+        if (item.id) {
+            motionDecision=item.motion || motionDecision;
+            deliver_note_on(item.channel, item.input, item.velocity, item.output, item.epoch === group.epoch,item.costs,item.arrival);
+        }
         else { handle_note_off(item.channel, item.input, item.velocity); }
     }
     ensembleDelivering = false;
-    ensemble_refresh();
-    if (ensembleQueue.length && ensembleTask) { ensembleTask.schedule(1); }
+    ensemble_refresh(true);
+    ensemble_schedule();
 }
 
 function notifydeleted() {
@@ -363,6 +510,7 @@ function notifydeleted() {
     if (harmonyPollTask) { harmonyPollTask.cancel(); }
     if (inputStabilityTask) { inputStabilityTask.cancel(); }
     ensemble_release();
+    flush_runtime_trace();
 }
 
 function loadbang() {
@@ -451,6 +599,8 @@ function restore_controls_from_patcher() {
     if (value !== null) {
         inputStabilityMs = clamp(value | 0, 0, 100);
     }
+    value = patcher_control_value("same_pitch");
+    if (value !== null) { samepitch(value); }
 
     if (registerLow > registerHigh) {
         registerHigh = registerLow;
@@ -513,6 +663,7 @@ function menu_value(value, orderedValues, aliases, fallback) {
 }
 
 function poll_harmony_global() {
+    flush_diagnostics();
     ensemble_refresh();
     var globalVersion = harmonyGlobal.version;
     var globalChordVersion = harmonyGlobal.chordVersion;
@@ -841,6 +992,7 @@ function apply_pending_harmony() {
 }
 
 function source_description() {
+    if (activeValidSource === 'plinky') { return 'Plinky Chords'; }
     return activeValidSource === "midi" ? "MIDI Note Field" : "SysEx Intervals";
 }
 
@@ -1083,6 +1235,7 @@ function release_held_note(channel) {
     }
 
     remove_active_mapping(channel, held.input, held.output);
+    ensemble_active_remove(held.output);
     release_output_reference(channel, held.output, 0);
     delete heldNotes[channel];
 }
@@ -1279,6 +1432,7 @@ function process_channel_message(statusByte, data1, data2) {
 }
 
 function handle_note_on(channel, inputNote, velocity) {
+    var arrival=new Date().getTime();
     if (inputBehavior === "hold" && inputStabilityMs > 0) {
         if (
             pendingStableNotes[channel] &&
@@ -1292,7 +1446,7 @@ function handle_note_on(channel, inputNote, velocity) {
                 channel: channel,
                 input: inputNote,
                 velocity: velocity,
-                due: new Date().getTime() + inputStabilityMs
+                due: arrival + inputStabilityMs,arrival:arrival
             };
         }
         runtime_trace(
@@ -1303,16 +1457,21 @@ function handle_note_on(channel, inputNote, velocity) {
             if (!inputStabilityTask) {
                 inputStabilityTask = new Task(input_stability_tick, this);
             }
-            inputStabilityTask.schedule(1);
+            input_stability_schedule();
         }
         return;
     }
 
-    process_note_on_now(channel, inputNote, velocity);
+    process_note_on_now(channel, inputNote, velocity, arrival);
 }
 
 function input_stability_tick() {
     input_stability_flush(false);
+}
+function input_stability_schedule(){
+    var due=Infinity;
+    for(var key in pendingStableNotes){if(pendingStableNotes.hasOwnProperty(key)){due=Math.min(due,pendingStableNotes[key].due);}}
+    if(inputStabilityTask && due!==Infinity){inputStabilityTask.schedule(Math.max(1,due-new Date().getTime()));}
 }
 
 function input_stability_flush(force) {
@@ -1335,18 +1494,19 @@ function input_stability_flush(force) {
         process_note_on_now(
             ready[i].channel,
             ready[i].input,
-            ready[i].velocity
+            ready[i].velocity,ready[i].arrival
         );
     }
 
     if (Object.keys(pendingStableNotes).length && inputStabilityTask) {
-        inputStabilityTask.schedule(1);
+        input_stability_schedule();
     }
 }
 
-function process_note_on_now(channel, inputNote, velocity) {
+function process_note_on_now(channel, inputNote, velocity, arrival) {
     var outputNote;
-    if (ensembleGroup) { ensemble_refresh(); }
+    if (ensembleGroup) { ensemble_refresh(true); }
+    motionDecision = read_motion();
 
     if (harmonyTiming === "nextnote") {
         apply_pending_harmony();
@@ -1357,14 +1517,22 @@ function process_note_on_now(channel, inputNote, velocity) {
         " velocity=" + velocity + " mode=" + quantizerMode
     );
     outputNote = quantize_note(inputNote, channel, velocity);
-    if (ensembleGroup) {
-        ensemble_enqueue(channel, inputNote, velocity, outputNote);
+    if (outputNote === null) {
+        var silentKey=note_key(channel,inputNote);
+        if (!activeNoteMappings[silentKey]) { activeNoteMappings[silentKey]=[]; }
+        activeNoteMappings[silentKey].push(null);
+        status("No valid note inside this voice's register");
         return;
     }
-    deliver_note_on(channel, inputNote, velocity, outputNote);
+    if (ensembleGroup && separationAmount > 0) {
+        ensemble_enqueue(channel, inputNote, velocity, outputNote,arrival);
+        return;
+    }
+    deliver_note_on(channel, inputNote, velocity, outputNote,undefined,undefined,arrival);
 }
 
-function deliver_note_on(channel, inputNote, velocity, outputNote, remember) {
+function deliver_note_on(channel, inputNote, velocity, outputNote, remember, scoredCosts, arrival) {
+    var costs=scoredCosts || candidate_costs(outputNote,inputNote,channel);
     var previousVoice = voiceState.hasOwnProperty(channel)
         ? copy_voice_state(voiceState[channel]) : null;
     var sourceKey = note_key(channel, inputNote);
@@ -1376,11 +1544,29 @@ function deliver_note_on(channel, inputNote, velocity, outputNote, remember) {
 
     outputKey = note_key(channel, outputNote);
 
+    if (samePitchMode === "retrigger" && outputNoteRefCounts[outputKey] > 0) {
+        // Retire older owners, retaining FIFO tombstones for their late offs.
+        // The new instance alone owns the replacement gate.
+        for (var oldKey in activeNoteMappings) {
+            if (oldKey.split(":")[0] !== String(channel)) { continue; }
+            var oldMappings=activeNoteMappings[oldKey];
+            for (var oldIndex=0;oldIndex<oldMappings.length;oldIndex++) {
+                if (oldMappings[oldIndex] === outputNote) {
+                    oldMappings[oldIndex]=null;
+                    ensemble_active_remove(outputNote);
+                }
+            }
+        }
+        delete outputNoteRefCounts[outputKey];
+        send_midi3(0x80 | ((channel-1)&0x0F),outputNote,0);
+    }
+
     if (!activeNoteMappings.hasOwnProperty(sourceKey)) {
         activeNoteMappings[sourceKey] = [];
     }
 
     activeNoteMappings[sourceKey].push(outputNote);
+    ensemble_active_add(outputNote);
 
     if (!outputNoteRefCounts.hasOwnProperty(outputKey)) {
         outputNoteRefCounts[outputKey] = 0;
@@ -1388,6 +1574,14 @@ function deliver_note_on(channel, inputNote, velocity, outputNote, remember) {
 
     outputNoteRefCounts[outputKey] += 1;
     if (remember !== false) { commit_voice_state(channel, inputNote, outputNote, previousVoice); }
+    if (lastVoiceDecision[channel]) {
+        lastVoiceDecision[channel].motion = {
+            base:motionDecision.base,spread:motionDecision.spread,effective:motionDecision.effective,
+            status:motionDecision.status,costs:costs
+        };
+    }
+    send_midi3(0x90 | ((channel - 1) & 0x0F), outputNote, velocity);
+    latency_record(arrival);
     runtime_trace(
         "NOTE\t" + harmonyVersion + "/" + activeValidSource +
         "\tch=" + channel + " in=" + inputNote + " out=" + outputNote +
@@ -1403,7 +1597,6 @@ function deliver_note_on(channel, inputNote, velocity, outputNote, remember) {
             pitch_class_names(legalPitchClasses).join(" ")
         );
     }
-    send_midi3(0x90 | ((channel - 1) & 0x0F), outputNote, velocity);
     if (inputBehavior === "hold") {
         heldNotes[channel] = {input: inputNote, output: outputNote};
         status(
@@ -1479,7 +1672,11 @@ function stateful_voice_status(channel) {
         " OUT " + midi_note_name(decision.output) +
         " MOVE " + signed_number(decision.movement) +
         (decision.common ? " [COMMON]" : "") +
-        " | Continuity " + continuityAmount + "% | v" + decision.version;
+        " | Motion " + motionDecision.base + " + " + motionDecision.spread +
+        " = " + motionDecision.effective + " | " + motionDecision.status +
+        " | costs I/C/S/D " + (decision.motion ? [decision.motion.costs.input,
+            decision.motion.costs.continuity,decision.motion.costs.separation || 0,
+            decision.motion.costs.direction].join("/") : "—");
 }
 
 function signed_number(value) {
@@ -1508,20 +1705,28 @@ function reset_runtime_trace(header) {
 }
 
 function runtime_trace(line) {
+    // No filesystem calls in the note callback. Timestamp at the event, flush
+    // batches from the existing 100ms maintenance task; drop oldest on overload.
+    if(typeof File==='undefined'){return;}
+    traceQueue.push(String(new Date().getTime())+'\t'+traceInstance+'\t'+line);
+    if(traceQueue.length>256){traceQueue.shift();}
+}
+
+function flush_runtime_trace() {
     var file;
-    if (typeof File === "undefined" || traceLineCount >= 1000) {
+    if (typeof File === "undefined" || !traceQueue.length) {
         return;
     }
+    if(traceLineCount>=1000)reset_runtime_trace('time\tinstance\tevent\tdetails');
     file = new File(TRACE_PATH, "readwrite");
     if (!file.isopen) {
         return;
     }
     file.position = file.eof;
-    file.writeline(
-        String(new Date().getTime()) + "\t" + traceInstance + "\t" + line
-    );
+    var batch=traceQueue;traceQueue=[];
+    for(var i=0;i<batch.length;i++){file.writeline(batch[i]);}
     file.close();
-    traceLineCount += 1;
+    traceLineCount += batch.length;
 }
 
 function handle_note_off(channel, inputNote, velocity) {
@@ -1532,12 +1737,12 @@ function handle_note_off(channel, inputNote, velocity) {
         return;
     }
 
-    if (!ensembleDelivering && ensembleGroup) {
+    if (!ensembleDelivering && ensembleGroup && separationAmount > 0) {
         ensembleQueue.push({channel: channel, input: inputNote, velocity: velocity,
             due: new Date().getTime() + ENSEMBLE_WINDOW_MS});
         if (typeof Task !== "undefined") {
             if (!ensembleTask) { ensembleTask = new Task(ensemble_tick, this); }
-            ensembleTask.schedule(1);
+            ensemble_schedule();
         } else { ensemble_flush(true); }
         return;
     }
@@ -1553,11 +1758,13 @@ function handle_note_off(channel, inputNote, velocity) {
         if (activeNoteMappings[sourceKey].length === 0) {
             delete activeNoteMappings[sourceKey];
         }
+        if (outputNote === null) { return; } // Superseded by a retrigger.
     } else {
         // Defensive fallback when a Note Off arrives without its Note On.
         outputNote = quantize_note(inputNote, channel, 0);
     }
 
+    ensemble_active_remove(outputNote);
     release_output_reference(channel, outputNote, velocity);
 }
 
@@ -1599,6 +1806,7 @@ function quantize_note(inputNote, channel, velocity) {
     } else {
         result = nearest_quantize(note);
     }
+    if (result === null) { return null; }
 
     if (
         quantizerMode !== "harmonizer" &&
@@ -1624,7 +1832,7 @@ function quantize_note(inputNote, channel, velocity) {
         quantizerMode === "nearest" ||
         quantizerMode === "chordnearest" ||
         (quantizerMode === "statefulnearest" &&
-         (!statefulHadPrior || continuityAmount === 0))
+         (!statefulHadPrior || continuityAmount === 0) && motionDecision.effective === 0)
     ) {
         result = clamp(result, 0, 127);
         if (result > registerHigh) {
@@ -1785,9 +1993,6 @@ function melody_quantize(note, channel) {
 function stateful_nearest_quantize(note, channel) {
     var prior = voiceState[channel];
     var candidates;
-    var continuity;
-    var previousWeight;
-    var harmonyChanged;
     var best;
     var bestScore = Infinity;
     var bestInputDistance = Infinity;
@@ -1798,42 +2003,26 @@ function stateful_nearest_quantize(note, channel) {
     var previousDistance;
     var score;
 
-    // The first note and Continuity 0% are deliberately identical to Scale
-    // Nearest. This gives the studio test an exact, trustworthy A/B endpoint.
-    if (!prior || continuityAmount === 0) {
+    // Neutral motion preserves the original Scale Nearest A/B endpoint.
+    if ((!prior || continuityAmount === 0) && motionDecision.effective === 0) {
         return nearest_quantize(note);
     }
 
     candidates = stateful_candidates();
     if (candidates.length === 0) {
+        if (motionDecision.effective !== 0 && registerMode === "limited") { return null; }
         return nearest_quantize(note);
     }
-
-    continuity = continuityAmount / 100;
-    previousWeight = 3 * continuity;
-    harmonyChanged = prior.version !== harmonyVersion;
 
     for (i = 0; i < candidates.length; i++) {
         candidate = candidates[i];
         inputDistance = Math.abs(candidate - note);
-        previousDistance = Math.abs(candidate - prior.output);
+        previousDistance = prior ? Math.abs(candidate - prior.output) : 0;
 
         // Squared distances produce a useful compromise between the two
         // targets. A linear weighted sum would let the heavier endpoint win
         // completely and make high continuity permanently sticky.
-        score = inputDistance * inputDistance +
-            previousWeight * previousDistance * previousDistance;
-
-        // On the first Note On after a harmonic change, reward retaining the
-        // exact previous pitch when it remains legal. The bonus is deliberately
-        // finite: a clearly different incoming gesture can still move the line.
-        if (
-            harmonyChanged &&
-            candidate === prior.output &&
-            is_legal_note(candidate)
-        ) {
-            score -= 64 * continuity;
-        }
+        score = ensemble_candidate_cost(candidate,note,channel);
 
         if (
             score < bestScore ||
@@ -2289,5 +2478,6 @@ function clamp(value, minimum, maximum) {
 }
 
 function status(text) {
-    outlet(1, "set", text);
+    if(typeof Task !== 'undefined'){pendingStatus=text;}
+    else{outlet(1, "set", text);}
 }

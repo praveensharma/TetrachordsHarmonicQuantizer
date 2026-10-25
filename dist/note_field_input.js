@@ -2,11 +2,12 @@
 // belong to the note-field role; never infer chord roles from rewritten channels.
 autowatch=1;inlets=1;outlets=2;
 var transport=new Global('tetrachords_field_transport_v1');
-var pending=[],last=[],timer=null,running=0,data=[],sysex=false,enabled=true;
+var pending=[],last=[],timer=null,running=0,data=[],sysex=false,enabled=true,overflow=false;
 var owner=String(new Date().getTime())+'-'+Math.floor(Math.random()*1000000000),serial=0,received=0;
 function show(text){outlet(0,'set',text);}
 function active(value){enabled=!!value;if(!enabled){cancel();running=0;data=[];sysex=false;show('Disabled — last field retained');}}
-function cancel(){if(timer){timer.cancel();}pending=[];}
+function cancel(){if(timer){timer.cancel();}pending=[];overflow=false;}
+function schedule(){if(!timer){timer=new Task(commit,this);}timer.cancel();timer.schedule(25);}
 function msg_int(value){
     if(!enabled){return;}
     var b=value&255;if(b>=248){return;}
@@ -17,15 +18,17 @@ function msg_int(value){
     data.push(b);var type=running&240,count=(type===192||type===208)?1:2;
     if(data.length<count){return;}
     if(type===144&&data[1]>0){
-        if(pending.length>=128){cancel();show('Burst too large — candidate discarded');running=0;data=[];return;}
+        if(overflow){schedule();data=[];return;}
+        if(pending.length>=128){pending=[];overflow=true;show('Burst too large — candidate discarded');schedule();data=[];return;}
         pending.push(data[0]);received++;
         show('Receiving '+pending.length+' notes · internal ch '+((running&15)+1)+' · total '+received);
-        if(!timer){timer=new Task(commit,this);}timer.cancel();timer.schedule(25);
+        schedule();
     }
     data=[];
 }
 function list(){var bytes=arrayfromargs(arguments);for(var i=0;i<bytes.length;i++){msg_int(bytes[i]);}}
 function commit(){
+    if(overflow){overflow=false;pending=[];show('Oversized burst discarded — previous field retained');return;}
     if(!enabled||!pending.length){return;}
     last=pending.slice(0);pending=[];
     var packet=JSON.stringify({v:1,id:owner+':'+(++serial),notes:last});

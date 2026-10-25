@@ -26,9 +26,9 @@ function tick(){
 var task=new Task(tick,this);task.interval=100;task.repeat();
 function page(value){
     try{
-        var config=JSON.parse(jsarguments[2]||'{}'),which=value===1?'monitor':'play';
-        ['play','monitor'].forEach(function(key){(config[key]||[]).forEach(function(name){var obj=this.patcher.getnamed(name);if(obj){obj.message('hidden',key===which?0:1);}},this);},this);
-        ['play','monitor'].forEach(function(key){var tab=this.patcher.getnamed('monitor-'+key+'-tab');if(tab){tab.message('bgcolor',key===which ? .04 : .22,key===which ? .48 : .25,key===which ? 1 : .28,1);}},this);
+        var config=JSON.parse(jsarguments[2]||'{}'),which=value===2?'input':value===1?'monitor':'play';
+        ['play','monitor','input'].forEach(function(key){(config[key]||[]).forEach(function(name){var obj=this.patcher.getnamed(name);if(obj){obj.message('hidden',key===which?0:1);}},this);},this);
+        ['play','monitor','input'].forEach(function(key){var tab=this.patcher.getnamed(key==='input'?'performance-input-tab':'monitor-'+key+'-tab');if(tab){tab.message('bgcolor',key===which ? .04 : .22,key===which ? .48 : .25,key===which ? 1 : .28,1);}},this);
     }catch(e){}
 }
 function loadbang(){page(0);}

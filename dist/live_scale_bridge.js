@@ -1,7 +1,7 @@
 // All Live Object Model access for Tetrachords Current Scale synchronization.
 // Observed Live state is diagnostic only and never becomes harmonic truth.
 
-var LIVE_SCALE_BRIDGE_VERSION = "0.1.0";
+var LIVE_SCALE_BRIDGE_VERSION = "0.1.1";
 
 function live_scale_bridge_value(value, property) {
     var result = value;
@@ -76,7 +76,17 @@ TetrachordsLiveScaleBridge.prototype.init = function () {
     if (!this.LiveAPIConstructor) {
         throw new Error("LiveAPI unavailable");
     }
-    this.song = new this.LiveAPIConstructor("live_set");
+    // LiveAPI(callback, path): passing the path as the callback leaves the
+    // legacy Max js API without a valid object, even though get/set exist.
+    this.song = new this.LiveAPIConstructor(null, "live_set");
+    if(typeof this.song.id!=='undefined'&&Number(this.song.id)<=0){
+        throw new Error('Live Song object is not ready');
+    }
+    var actual=this.readCurrentScale();
+    if(actual.rootNote===null||typeof actual.rootNote==='undefined'||!isFinite(Number(actual.rootNote))||
+        actual.scaleName===null||typeof actual.scaleName==='undefined'||!actual.scaleIntervals.length){
+        throw new Error('Live Song scale properties are unavailable');
+    }
     this.capabilities.songScaleReadable = !!this.song.get;
     this.capabilities.songScaleWritable = !!this.song.set;
     this.capabilities.songScaleObservable = true;

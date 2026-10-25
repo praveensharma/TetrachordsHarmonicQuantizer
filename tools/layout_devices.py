@@ -122,6 +122,9 @@ def update(relative, positions, width, receiver=False):
         receiver_transport(patch)
     add_monitor(patch, receiver)
     path.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + '\n')
+    if not receiver:
+        from performance_layout import quantizer
+        quantizer()
 
 def ensemble_selectors(patch):
     # Keep original saved numeric parameters intact; visible menus are proxies.

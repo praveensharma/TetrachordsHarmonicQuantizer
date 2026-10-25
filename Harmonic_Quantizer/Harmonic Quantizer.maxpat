@@ -13,7 +13,7 @@
       100.0,
       100.0,
       790.0,
-      370.0
+      169
     ],
     "openinpresentation": 1,
     "gridsize": [
@@ -2179,8 +2179,8 @@
           "presentation": 1,
           "presentation_rect": [
             15,
-            125,
-            40,
+            44,
+            65,
             18
           ],
           "text": "Input",
@@ -2192,7 +2192,8 @@
             0.76,
             1.0
           ],
-          "hidden": 0
+          "hidden": 1,
+          "varname": "obj-input-label"
         }
       },
       {
@@ -2219,9 +2220,9 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            55,
-            122,
-            155,
+            85,
+            40,
+            170,
             23
           ],
           "parameter_enable": 1,
@@ -2257,7 +2258,7 @@
             1.0
           ],
           "hint": "Follow Gate preserves source Note Offs. Hold Last Pitch keeps one quantized pitch active per MIDI channel until the next Note On.",
-          "hidden": 0
+          "hidden": 1
         }
       },
       {
@@ -2286,9 +2287,9 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            230,
-            125,
+            280,
             44,
+            65,
             18
           ],
           "text": "Settle",
@@ -2300,7 +2301,8 @@
             0.76,
             1.0
           ],
-          "hidden": 0
+          "hidden": 1,
+          "varname": "obj-input-stability-label"
         }
       },
       {
@@ -2323,9 +2325,9 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            275,
-            122,
-            50,
+            350,
+            40,
+            65,
             23
           ],
           "parameter_enable": 1,
@@ -2358,7 +2360,7 @@
             1.0
           ],
           "hint": "Hold Last Pitch only: wait for this many milliseconds of pitch stability before replacing the held output.",
-          "hidden": 0
+          "hidden": 1
         }
       },
       {
@@ -2369,9 +2371,9 @@
           "numoutlets": 0,
           "presentation": 1,
           "presentation_rect": [
-            330,
-            125,
-            24,
+            425,
+            44,
+            25,
             18
           ],
           "text": "ms",
@@ -2383,7 +2385,8 @@
             0.76,
             1.0
           ],
-          "hidden": 0
+          "hidden": 1,
+          "varname": "obj-input-stability-unit"
         }
       },
       {
@@ -2419,7 +2422,7 @@
           "varname": "monitor-play-tab",
           "presentation": 1,
           "presentation_rect": [
-            570,
+            480,
             7,
             80,
             23
@@ -2495,7 +2498,7 @@
           "varname": "monitor-monitor-tab",
           "presentation": 1,
           "presentation_rect": [
-            655,
+            565,
             7,
             80,
             23
@@ -2572,13 +2575,13 @@
           "presentation": 1,
           "presentation_rect": [
             15,
-            151,
+            121,
             720,
             43
           ],
           "jsarguments": [
             "compact",
-            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"obj-input-label\", \"input_behavior\", \"obj-input-stability-label\", \"input_stability\", \"obj-input-stability-unit\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
+            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"], \"input\": [\"obj-input-label\", \"input_behavior\", \"obj-input-stability-label\", \"input_stability\", \"obj-input-stability-unit\", \"same_pitch\", \"performance-same-label\", \"performance-help\"]}"
           ],
           "filename": "harmonic_monitor.js",
           "parameter_enable": 0,
@@ -2610,11 +2613,11 @@
             15,
             35,
             720,
-            159
+            85
           ],
           "jsarguments": [
             "detail",
-            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"obj-input-label\", \"input_behavior\", \"obj-input-stability-label\", \"input_stability\", \"obj-input-stability-unit\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"]}"
+            "{\"play\": [\"obj-reset-voices-button\", \"obj-reset-voices-label\", \"obj-mode-label\", \"quantizer_mode\", \"obj-harmonizer-label\", \"chord_map\", \"obj-timing-label\", \"harmony_change\", \"obj-gravity-label\", \"root_gravity\", \"obj-continuity-label\", \"continuity\", \"obj-register-label\", \"register_mode\", \"obj-low-label\", \"register_low\", \"obj-high-label\", \"register_high\", \"obj-ensemble-label\", \"obj-part-label\", \"obj-separation-label\", \"ensemble_separation\", \"obj-reset-ensemble-button\", \"obj-reset-ensemble-label\", \"ensemble_group_selector\", \"ensemble_part_selector\", \"monitor-compact\"], \"monitor\": [\"obj-status\", \"obj-ensemble-monitor\", \"monitor-detail\"], \"input\": [\"obj-input-label\", \"input_behavior\", \"obj-input-stability-label\", \"input_stability\", \"obj-input-stability-unit\", \"same_pitch\", \"performance-same-label\", \"performance-help\"]}"
           ],
           "hidden": 1,
           "filename": "harmonic_monitor.js",
@@ -2627,6 +2630,264 @@
             0
           ],
           "ignoreclick": 1
+        }
+      },
+      {
+        "box": {
+          "id": "performance-same-pitch",
+          "maxclass": "umenu",
+          "varname": "same_pitch",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            100,
+            80,
+            160,
+            23
+          ],
+          "fontname": "Arial",
+          "fontsize": 11,
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            100,
+            80,
+            160,
+            23
+          ],
+          "parameter_enable": 1,
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1
+          ],
+          "saved_attribute_attributes": {
+            "valueof": {
+              "parameter_longname": "Same Pitch",
+              "parameter_shortname": "Same Pitch",
+              "parameter_type": 2,
+              "parameter_mmin": 0,
+              "parameter_mmax": 1,
+              "parameter_initial_enable": 1,
+              "parameter_initial": [
+                0
+              ],
+              "parameter_enum": [
+                "Legato",
+                "Retrigger"
+              ]
+            }
+          },
+          "items": [
+            "Legato",
+            ",",
+            "Retrigger"
+          ],
+          "outlettype": [
+            "int",
+            "",
+            ""
+          ],
+          "hidden": 1
+        }
+      },
+      {
+        "box": {
+          "id": "performance-same-label",
+          "maxclass": "comment",
+          "varname": "performance-same-label",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            15,
+            84,
+            80,
+            18
+          ],
+          "fontname": "Arial",
+          "fontsize": 11,
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            84,
+            80,
+            18
+          ],
+          "text": "Same Pitch",
+          "bgcolor": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "hidden": 1
+        }
+      },
+      {
+        "box": {
+          "id": "performance-help",
+          "maxclass": "comment",
+          "varname": "performance-help",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            15,
+            115,
+            715,
+            40
+          ],
+          "fontname": "Arial",
+          "fontsize": 11,
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            15,
+            115,
+            715,
+            40
+          ],
+          "text": "Retrigger: restart overlapping identical pitches. Older releases cannot cut off the new attack.\nFollow Gate preserves source note lengths; Hold Last Pitch uses Settle for gestures.",
+          "bgcolor": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "hidden": 1
+        }
+      },
+      {
+        "box": {
+          "id": "performance-send",
+          "maxclass": "newobj",
+          "varname": "performance-send",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20,
+            400,
+            160,
+            22
+          ],
+          "fontname": "Arial",
+          "fontsize": 11,
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "text": "prepend samepitch"
+        }
+      },
+      {
+        "box": {
+          "id": "performance-input-tab",
+          "maxclass": "textbutton",
+          "varname": "performance-input-tab",
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            650,
+            7,
+            80,
+            23
+          ],
+          "fontname": "Arial",
+          "fontsize": 11,
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            650,
+            7,
+            80,
+            23
+          ],
+          "text": "Input",
+          "texton": "Input",
+          "mode": 0,
+          "outlettype": [
+            "",
+            "int",
+            ""
+          ],
+          "rounded": 7,
+          "bgcolor": [
+            0.22,
+            0.25,
+            0.28,
+            1
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "performance-input-bang",
+          "maxclass": "newobj",
+          "varname": "performance-input-bang",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20,
+            400,
+            160,
+            22
+          ],
+          "fontname": "Arial",
+          "fontsize": 11,
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "text": "t b"
+        }
+      },
+      {
+        "box": {
+          "id": "performance-input-msg",
+          "maxclass": "message",
+          "varname": "performance-input-msg",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20,
+            400,
+            160,
+            22
+          ],
+          "fontname": "Arial",
+          "fontsize": 11,
+          "textcolor": [
+            0.91,
+            0.93,
+            0.94,
+            1
+          ],
+          "text": "page 2"
         }
       }
     ],
@@ -3470,6 +3731,66 @@
             0
           ]
         }
+      },
+      {
+        "patchline": {
+          "source": [
+            "performance-same-pitch",
+            0
+          ],
+          "destination": [
+            "performance-send",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "performance-send",
+            0
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "performance-input-tab",
+            0
+          ],
+          "destination": [
+            "performance-input-bang",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "performance-input-bang",
+            0
+          ],
+          "destination": [
+            "performance-input-msg",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "performance-input-msg",
+            0
+          ],
+          "destination": [
+            "monitor-compact",
+            0
+          ]
+        }
       }
     ],
     "dependency_cache": [
@@ -3494,6 +3815,13 @@
       0.14,
       0.16,
       1.0
-    ]
+    ],
+    "parameters": {
+      "performance-same-pitch": [
+        "Same Pitch",
+        "Same Pitch",
+        0
+      ]
+    }
   }
 }

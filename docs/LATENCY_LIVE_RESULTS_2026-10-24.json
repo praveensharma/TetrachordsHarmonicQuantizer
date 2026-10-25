@@ -1,0 +1,16 @@
+{
+  "run": 1792887540391,
+  "utc": "2026-10-25T00:19:00.391Z",
+  "localDate": "2026-10-24",
+  "scope": "Live internal MIDI tracks, cpuclock; excludes hardware",
+  "warmupNotesExcludedPerCase": 20,
+  "results": [
+    {"phase":"reference","samples":100,"medianMs":5.4257490038871765,"p95Ms":39.481708005070686,"maxMs":57.71612399816513},
+    {"phase":"quant-nearest","samples":100,"medianMs":5.601708009839058,"p95Ms":40.135916009545326,"maxMs":65.07866601645947},
+    {"phase":"quant-stateful","samples":100,"medianMs":5.495333015918732,"p95Ms":31.533916011452675,"maxMs":45.27937400341034},
+    {"phase":"quant-separated","samples":100,"medianMs":11.155166015028954,"p95Ms":57.37154100835323,"maxMs":71.98658300936222},
+    {"phase":"quant-hold20","samples":100,"medianMs":29.30970700085163,"p95Ms":66.12012401223183,"maxMs":80.34279100596905},
+    {"phase":"rota","samples":100,"medianMs":3.4319160133600235,"p95Ms":23.952374011278152,"maxMs":43.14112401008606},
+    {"phase":"quant-rota","samples":100,"medianMs":14.468708008527756,"p95Ms":25.085208013653755,"maxMs":40.72700001299381}
+  ]
+}

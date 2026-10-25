@@ -41,6 +41,10 @@ receiver.validnotechannel(0);burst([55]);advance(25);assert.equal(receiver.valid
 receiver.validnotechannel(17);assert.equal(receiver.validMidiNotes.join(','),'55');
 receiver.validsource('sysex');assert.equal(globals.tetrachords_harmony_v1.validNoteSource,'sysex');
 receiver.validsource('midi');assert.equal(globals.tetrachords_harmony_v1.activeValidMidiNotes.join(','),'55');
+// Reject the entire oversized burst, including any notes after the limit.
+const previousVersion=receiver.validMidiVersion;
+burst(Array.from({length:132},(_,i)=>i%128));advance(25);
+assert.equal(receiver.validMidiVersion,previousVersion);assert.equal(receiver.validMidiNotes.join(','),'55');
 console.log('Two-track input: channel-1 internal streams stay distinct, atomic bursts, chord/SysEx preservation, mailbox restore and source switching passed.');
 for(const file of ['Note_Field_Input/Tetrachords Note Field Input.maxpat','Tetrachords_Harmony_Receiver/Tetrachords Harmony Receiver.maxpat']){
  const p=JSON.parse(fs.readFileSync(path.join(root,file),'utf8')).patcher,boxes=Object.fromEntries(p.boxes.map(e=>[e.box.id,e.box]));

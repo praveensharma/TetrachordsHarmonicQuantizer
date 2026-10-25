@@ -75,7 +75,8 @@ const state = {
     scale_intervals: [0, 2, 3, 5, 7, 8, 10]
 };
 const writes = [];
-function LiveAPI(callback) {
+function LiveAPI(callback, objectPath) {
+    assert.strictEqual(objectPath,'live_set','LiveAPI path must be the second constructor argument');
     this.callback = callback;
     this.get = (name) => state[name];
     this.set = (name, value) => {
@@ -99,5 +100,7 @@ assert.deepStrictEqual(writes, [
 ]);
 assert.strictEqual(result.verified, true);
 assert.deepStrictEqual(result.actual.scaleIntervals, [0, 2, 4, 5, 7, 9, 11]);
+function Unresolved(callback,objectPath){assert.equal(objectPath,'live_set');this.id=0;this.get=()=>{throw Error('must not access unresolved object');};}
+assert.throws(()=>new context.TetrachordsLiveScaleBridge(Unresolved).init(),/not ready/);
 
 console.log("Live scale matcher and bridge: exact, approximate, normalization and round-trip tests passed.");

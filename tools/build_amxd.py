@@ -63,6 +63,26 @@ class Device:
 
 DEVICES = (
     Device(
+        name='Plinky Harmony Receiver',
+        maxpat=PROJECT_ROOT / 'Plinky_Harmony_Receiver/Plinky Harmony Receiver.maxpat',
+        javascript=PROJECT_ROOT / 'Plinky_Harmony_Receiver/plinky_harmony_receiver.js',
+        install_dir=MAX4LIVE_LIBRARY / 'Plinky Harmony Receiver',
+        filename='Plinky Harmony Receiver.amxd',
+        install_alias_dirs=(MIDI_EFFECT_LIBRARY,),
+        support_files=(
+            PROJECT_ROOT / 'Tetrachords_Harmony_Receiver/live_scale_matcher.js',
+            PROJECT_ROOT / 'Tetrachords_Harmony_Receiver/live_scale_bridge.js',
+        ),
+    ),
+    Device(
+        name='Harmonic Motion',
+        maxpat=PROJECT_ROOT / 'Harmonic_Motion/Harmonic Motion.maxpat',
+        javascript=PROJECT_ROOT / 'Harmonic_Motion/harmonic_motion.js',
+        install_dir=MAX4LIVE_LIBRARY / 'Harmonic Motion',
+        filename='Harmonic Motion.amxd',
+        install_alias_dirs=(MIDI_EFFECT_LIBRARY,),
+    ),
+    Device(
         name='Tetrachords Note Field Input',
         maxpat=PROJECT_ROOT / 'Note_Field_Input/Tetrachords Note Field Input.maxpat',
         javascript=PROJECT_ROOT / 'Note_Field_Input/note_field_input.js',
@@ -206,12 +226,13 @@ def backup(path: Path, stamp: str) -> Path:
 
 
 def template_for(device: Device) -> Path:
-    if device.installed_amxd.exists():
-        return device.installed_amxd
     if device.seed_amxd.exists():
         return device.seed_amxd
-    if device.name=='Tetrachords Note Field Input':
-        return MAX4LIVE_LIBRARY / 'Harmonic Quantizer/Harmonic Quantizer.amxd'
+    if device.installed_amxd.exists():
+        return device.installed_amxd
+    if device.name in ('Tetrachords Note Field Input','Harmonic Motion','Plinky Harmony Receiver'):
+        installed=MAX4LIVE_LIBRARY / 'Harmonic Quantizer/Harmonic Quantizer.amxd'
+        return installed if installed.exists() else PROJECT_ROOT / 'dist/Harmonic Quantizer.amxd'
     raise ValueError(
         f"{device.name}: no installed AMXD or committed dist seed is available"
     )
@@ -299,8 +320,37 @@ def verify_installed(devices: Iterable[Device]) -> list[dict[str, object]]:
     return results
 
 
+def build_distribution(devices: Iterable[Device], directory: Path) -> list[dict[str, object]]:
+    devices=tuple(devices)
+    directory.mkdir(parents=True,exist_ok=True)
+    atomic_write(directory / MONITOR_SCRIPT.name, MONITOR_SCRIPT.read_bytes())
+    results=[]
+    for device in devices:
+        results.append(build_device(device,directory/device.filename))
+        for source in (device.javascript,*device.support_files):
+            atomic_write(directory/source.name,source.read_bytes())
+    verify_distribution(devices,directory)
+    return results
+
+
+def verify_distribution(devices: Iterable[Device], directory: Path) -> list[dict[str, object]]:
+    if (directory/MONITOR_SCRIPT.name).read_bytes()!=MONITOR_SCRIPT.read_bytes():
+        raise ValueError('Distribution monitor differs from source')
+    results=[]
+    for device in devices:
+        target=directory/device.filename
+        if embedded_patch(parse_container(target.read_bytes(),target),target)!=read_maxpat(device.maxpat)[1]:
+            raise ValueError(f'{device.name}: distribution patch differs from source')
+        for source in (device.javascript,*device.support_files):
+            if (directory/source.name).read_bytes()!=source.read_bytes():
+                raise ValueError(f'{device.name}: distribution {source.name} differs from source')
+        results.append({'name':device.name,'distribution':str(target),'verified':True})
+    return results
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--device',action='append',choices=[d.name for d in DEVICES],help='Build/install only this device; repeat for multiple devices')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "--install",
@@ -312,6 +362,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="verify installed AMXDs exactly match their source maxpats",
     )
+    mode.add_argument('--verify-dist',action='store_true',help='Read-only check of every packaged patch and JavaScript dependency against source')
     parser.add_argument(
         "--dist",
         type=Path,
@@ -323,13 +374,19 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    devices=tuple(d for d in DEVICES if not args.device or d.name in args.device)
     try:
         if args.verify_installed:
-            results = verify_installed(DEVICES)
+            results = verify_installed(devices)
+        elif args.verify_dist:
+            results = verify_distribution(devices,args.dist)
         elif args.install:
+            # Build the release artifacts FIRST, then install those exact bytes.
+            # An installation must never leave the repository distribution stale.
+            build_distribution(devices,args.dist)
             stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
             backups: dict[str, list[str]] = {}
-            for device in DEVICES:
+            for device in devices:
                 backups[device.name] = []
                 for install_dir in device.install_dirs:
                     monitor = install_dir / MONITOR_SCRIPT.name
@@ -353,8 +410,9 @@ def main() -> int:
                             )
 
             results = []
-            for device in DEVICES:
-                result = build_device(device, device.installed_amxd)
+            for device in devices:
+                atomic_write(device.installed_amxd,(args.dist/device.filename).read_bytes())
+                result = {'name':device.name,'distribution':str(args.dist/device.filename),'output':str(device.installed_amxd)}
                 atomic_write(
                     device.installed_javascript,
                     device.javascript.read_bytes(),
@@ -386,16 +444,7 @@ def main() -> int:
             for result in results:
                 result["backup"] = backups[result["name"]]
         else:
-            args.dist.mkdir(parents=True, exist_ok=True)
-            atomic_write(args.dist / MONITOR_SCRIPT.name, MONITOR_SCRIPT.read_bytes())
-            results = [
-                build_device(device, args.dist / device.filename)
-                for device in DEVICES
-            ]
-            for device in DEVICES:
-                atomic_write(args.dist / device.javascript.name, device.javascript.read_bytes())
-                for support_file in device.support_files:
-                    atomic_write(args.dist / support_file.name, support_file.read_bytes())
+            results = build_distribution(devices,args.dist)
         print(json.dumps({"ok": True, "devices": results}, indent=2))
         return 0
     except (OSError, ValueError) as error:

@@ -130,6 +130,28 @@ assert.strictEqual(restoredReceiver.context.chordHoldMode, "gate");
 assert.strictEqual(restoredReceiver.context.validNoteSource, "midi");
 assert.strictEqual(restoredReceiver.context.validNoteCaptureChannel, 4);
 
+// A full diagnostic trace must roll over rather than permanently stopping.
+// The first event after rollover remains available for current-session debug.
+const tracedReceiver = makeContext({});
+const traceLines = [];
+tracedReceiver.context.File = function File() {
+    this.isopen = true;
+    Object.defineProperty(this, "eof", {
+        get() { return traceLines.length; },
+        set(value) { if (value === 0) traceLines.length = 0; }
+    });
+    this.writeline = (line) => traceLines.push(line);
+    this.close = () => {};
+};
+loadScript("Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js", tracedReceiver);
+tracedReceiver.context.reset_runtime_trace("event\tdetails");
+for (let index = 0; index <= 1000; index++) {
+    tracedReceiver.context.runtime_trace("TEST\t" + index);
+}
+assert.strictEqual(tracedReceiver.context.traceLineCount, 1);
+assert.strictEqual(traceLines.length, 2);
+assert.ok(traceLines[1].endsWith("\tTEST\t1000"));
+
 const receiver = makeContext(sharedGlobals);
 loadScript(
     "Tetrachords_Harmony_Receiver/tetrachords_harmony_receiver.js",

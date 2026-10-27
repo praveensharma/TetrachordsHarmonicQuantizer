@@ -76,7 +76,7 @@ h.packet(62);h.advance(12);assert.equal(s.activeValidVersion,version);
 r.active(0);h.packet(65);h.advance(12);assert.equal(s.activeValidVersion,version);
 r.active(1);assert.equal(s.root,5);assert.equal(s.activeValidVersion,version+1);
 // Actual quantizer consumes chord and scale state, and late joiners read Globals.
-vm.runInContext(fs.readFileSync(path.join(root,'Harmonic_Quantizer/harmonic_quantizer.js'),'utf8'),r);
+vm.runInContext(fs.readFileSync(path.join(root,'tests/reference/harmonic_quantizer_legacy.js'),'utf8'),r);
 r.sync_from_global(true);r.registerMode='free';
 for(const mode of ['nearest','harmonizer','chordnearest']){
  r.quantizerMode=mode;const legal=mode==='nearest'?s.activeValidPitchClasses:s.activeChordPitchClasses;

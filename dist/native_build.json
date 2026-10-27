@@ -1,0 +1,14 @@
+{
+  "source_sha256": "f314c0aaaf3e953d904cba37a0bbfa86c3d0b1b8cb9eec834932a85669272988",
+  "platform": "macOS",
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "sdk_revision": "c03a2922a2a8ff149165a1e2ea134e9321d6e202",
+  "files": {
+    "Contents/Info.plist": "cf2df3b372ecac60585383ced1ff706e5b241594e8488aae74f245a5e605ff75",
+    "Contents/MacOS/tetrachords.quantizer": "c2ef3c87210b7ae8edaa221fe2e79169a2fea7f42d1f7fe17d84447ddfe70df2",
+    "Contents/_CodeSignature/CodeResources": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b"
+  }
+}

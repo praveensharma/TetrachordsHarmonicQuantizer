@@ -3,7 +3,7 @@ const assert = require("assert");
 const fs = require("fs");
 const vm = require("vm");
 const path = require("path");
-const source = fs.readFileSync(path.join(__dirname, "../Harmonic_Quantizer/harmonic_quantizer.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "../tests/reference/harmonic_quantizer_legacy.js"), "utf8");
 
 function studio() {
     const globals = {};

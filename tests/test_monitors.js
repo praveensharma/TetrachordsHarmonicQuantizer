@@ -24,7 +24,7 @@ for(const args of [['compact',720,43],['detail',720,85],['receiver',760,98]])dis
 const emitted=[],visual=[];let fail=false;
 const c=vm.createContext({Global:function(){return {};},arrayfromargs:a=>Array.from(a),messnamed(){},
  outlet(...args){emitted.push(args);},patcher:{getnamed(name){return {message(...args){if(fail)throw Error('missing UI');visual.push([name,...args]);}};}}});
-vm.runInContext(fs.readFileSync(path.join(root,'Harmonic_Quantizer/harmonic_quantizer.js'),'utf8'),c);
+vm.runInContext(fs.readFileSync(path.join(root,'tests/reference/harmonic_quantizer_legacy.js'),'utf8'),c);
 c.activate_harmony(1,0,[0,4,7],'sysex');c.quantizerMode='nearest';c.registerMode='free';
 c.process_channel_message(144,61,100);
 const event=visual.find(e=>e[1]==='event');assert(event);assert.equal(event[2],61);

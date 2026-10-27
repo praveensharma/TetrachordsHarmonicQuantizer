@@ -1,5 +1,26 @@
 # MIDI latency audit — 2026-10-24
 
+## Native migration follow-up — 2026-10-26
+
+The current quantizer note path is native C++, not a JS callback. All pitch modes,
+Hold/Settle and ensemble decision windows are included. The old results below
+describe the earlier engine/fixtures and must not be presented as new native
+hardware measurements. The JS benchmark/latency fixtures now explicitly load
+the frozen reference engine as a baseline.
+
+Native processing still intentionally waits for Hold stability and/or active
+ensemble separation. Follow Gate + Separation 0 is the zero-deliberate-wait
+control condition. Display, Motion discovery and harmony snapshot recovery run
+outside the melodic note path.
+
+The user reports T-1 USB pitch sequences still sounded late/sloppy with Live's
+buffer at 128 samples. Do not infer the cause solely from that buffer value.
+Next measurement: identical T-1 source and Live/FH-2 route, matched bypass/native
+passes, input/output Note On/Off counts, per-event delay distribution and jitter.
+Separate extra/retriggered notes from actual timing error, and distinguish
+external direct gates from Live-routed pitch/gate timing. No claim of resolving
+the reported hardware timing fault has been made by the language port.
+
 ## Measurement boundaries
 
 The existing `/private/tmp/harmonic_quantizer_trace.tsv` (last modified

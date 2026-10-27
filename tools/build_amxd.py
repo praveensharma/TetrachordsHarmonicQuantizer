@@ -19,6 +19,7 @@ import shutil
 import struct
 import sys
 import tempfile
+import native_artifact
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -99,6 +100,7 @@ DEVICES = (
         install_dir=MAX4LIVE_LIBRARY / "Harmonic Quantizer",
         filename="Harmonic Quantizer.amxd",
         install_alias_dirs=(MIDI_EFFECT_LIBRARY,),
+        support_files=(PROJECT_ROOT/'native/max/native_harmony_bridge.js',),
     ),
     Device(
         name="Tetrachords Harmony Receiver",
@@ -276,6 +278,7 @@ def verify_installed(devices: Iterable[Device]) -> list[dict[str, object]]:
         _, source_json = read_maxpat(device.maxpat)
         locations = []
         for install_dir in device.install_dirs:
+            if device.name == 'Harmonic Quantizer': native_artifact.verify(install_dir)
             if (install_dir / MONITOR_SCRIPT.name).read_bytes() != MONITOR_SCRIPT.read_bytes():
                 raise ValueError(f'{device.name}: installed monitor script differs from source')
             installed = install_dir / device.filename
@@ -323,6 +326,8 @@ def verify_installed(devices: Iterable[Device]) -> list[dict[str, object]]:
 def build_distribution(devices: Iterable[Device], directory: Path) -> list[dict[str, object]]:
     devices=tuple(devices)
     directory.mkdir(parents=True,exist_ok=True)
+    if any(d.name=='Harmonic Quantizer' for d in devices):
+        native_artifact.copy(PROJECT_ROOT/'native/build', directory)
     atomic_write(directory / MONITOR_SCRIPT.name, MONITOR_SCRIPT.read_bytes())
     results=[]
     for device in devices:
@@ -338,6 +343,7 @@ def verify_distribution(devices: Iterable[Device], directory: Path) -> list[dict
         raise ValueError('Distribution monitor differs from source')
     results=[]
     for device in devices:
+        if device.name == 'Harmonic Quantizer': native_artifact.verify(directory)
         target=directory/device.filename
         if embedded_patch(parse_container(target.read_bytes(),target),target)!=read_maxpat(device.maxpat)[1]:
             raise ValueError(f'{device.name}: distribution patch differs from source')
@@ -389,6 +395,10 @@ def main() -> int:
             for device in devices:
                 backups[device.name] = []
                 for install_dir in device.install_dirs:
+                    if device.name == 'Harmonic Quantizer' and (install_dir/native_artifact.NAME).exists():
+                        saved=install_dir/(native_artifact.NAME+'.backup-'+stamp)
+                        shutil.copytree(install_dir/native_artifact.NAME,saved)
+                        backups[device.name].append(str(saved))
                     monitor = install_dir / MONITOR_SCRIPT.name
                     if monitor.exists():
                         backups[device.name].append(str(backup(monitor, stamp)))
@@ -427,6 +437,7 @@ def main() -> int:
                         device.javascript.read_bytes(),
                     )
                 for install_dir in device.install_dirs:
+                    if device.name == 'Harmonic Quantizer': native_artifact.copy(args.dist,install_dir)
                     for support_file in device.support_files:
                         atomic_write(
                             install_dir / support_file.name,

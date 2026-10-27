@@ -2,7 +2,7 @@
 // Optional source argument allows the exact same harness to compare old/new code.
 const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('assert');
 const {performance}=require('perf_hooks');
-const source=fs.readFileSync(process.argv[2]||path.join(__dirname,'../Harmonic_Quantizer/harmonic_quantizer.js'),'utf8');
+const source=fs.readFileSync(process.argv[2]||path.join(__dirname,'../tests/reference/harmonic_quantizer_legacy.js'),'utf8');
 function run(hold,separation,iterations=1000){
  let now=0,opens=0,ui=0,lastOutput=0,totalOutputs=0,callbacks=0;const timers=new Set(),globals={};
  function Task(fn,owner){this.fn=fn;this.owner=owner;this.schedule=ms=>{this.due=now+ms;timers.add(this);};this.cancel=()=>timers.delete(this);this.repeat=()=>{};}

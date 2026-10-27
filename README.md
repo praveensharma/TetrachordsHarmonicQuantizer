@@ -20,6 +20,11 @@ Use either Tetrachords or Plinky as the harmonic authority, not both at once.
 The quantizer device names do not change when switching harmony sources.
 No `All Ins` routing is required.
 
+The current source checkout now uses a native C++ Harmonic Quantizer on macOS.
+The published beta.1 ZIP still contains the earlier JS engine. Native builds must
+include `tetrachords.quantizer.mxo` and `native_build.json` alongside the AMXD and
+JS support files; see [native build/upgrade instructions](native/README.md).
+
 ## Start here
 
 Download the complete runtime ZIP from the
@@ -132,7 +137,9 @@ collection (or the release ZIP's entire `Devices/` collection), for example:
 ```text
 User Library/
   Presets/MIDI Effects/Max MIDI Effect/Harmonic Tools/
-    ...all five AMXDs and all eight JavaScript files
+    ...all five AMXDs and all nine JavaScript files
+    native_build.json
+    tetrachords.quantizer.mxo/   (keep the complete bundle)
 ```
 
 In Live's browser, navigate to your chosen User Library folder and drag the appropriate
@@ -699,6 +706,18 @@ stuck note.
 
 ## Developer validation
 
+The portable C++ engine lives in [core/](core/README.md) and the native Max adapter
+in [native/](native/README.md). All eight pitch modes, Hold/Settle, ensemble
+coordination, continuity and directional scoring run natively. The remaining JS
+is control/receiver/readout plumbing only. The old JS algorithm is frozen in
+`tests/reference/` as a test oracle and is not packaged at runtime.
+
+Run `python3 tools/test_cpp_core.py --sanitize` for selector, ownership and timed
+four-voice comparisons. `node tests/test_native_control.js` tests the actual new
+adapter and parameter/graph wiring. Older JS musical tests explicitly target the
+reference implementation. See the native README for SDK build, package checks,
+macOS limits and real Live acceptance tests.
+
 If Node.js is installed, run these from the package root:
 
 ```text
@@ -728,11 +747,18 @@ that runtime too; do not reuse groups for unrelated instruments.
 
 ## Validation and release limits
 
-The beta includes automated engine, note lifecycle, ensemble, receiver and
-package checks plus an isolated Live timing experiment. Automated recall tests
-are not a real save/close/reopen certification. Fresh installation, device-state
-recall, sustained multi-device hardware stress, and the matched quantizer→ROTA
-Live latency follow-up remain studio acceptance checks.
+The feature-frozen native beta includes automated engine, note lifecycle,
+ensemble, receiver and package checks; real Live loading, legacy-graph migration,
+four-instance ensemble and parameter save/reopen checks; and T-1 software-output
+and recorded audio A/B validation. The audio comparison found no measurable
+additional quantizer delay and verified all 32 expected pitch transformations.
+See [the audio report](docs/T1_AUDIO_AB_2026-10-27.md).
+
+Fresh-machine installation and sustained multi-device hardware stress remain
+outside this beta's certification. Recorded MIDI/audio alignment does not measure
+absolute hardware round-trip delay. ROTA remains a separate project; its native
+migration is subsequent work, not part of this release. Runtime native binaries
+currently target macOS arm64/x86_64 and are ad-hoc signed, not notarized.
 
 Follow Gate with Independent/Separation 0 has no deliberate note wait. Active
 separation adds a roughly 4 ms coordination window; Hold Last Pitch adds its

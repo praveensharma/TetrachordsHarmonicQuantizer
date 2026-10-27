@@ -1,0 +1,222 @@
+{
+  "date": "2026-10-26",
+  "scope": "Real Ableton Live runtime; isolated no-hardware-output track",
+  "native_source_sha256": "f314c0aaaf3e953d904cba37a0bbfa86c3d0b1b8cb9eec834932a85669272988",
+  "cold_live_process": {
+    "pid": 37778,
+    "started_local": "2026-10-26 22:39:20 America/New_York"
+  },
+  "runs": [
+    {
+      "result": "PASS",
+      "legacyGraph": false,
+      "time": "2026-10-27T02:41:38.761Z",
+      "initial": {
+        "quantizer_mode": [
+          1
+        ],
+        "continuity": [
+          73
+        ],
+        "register_mode": [
+          1
+        ],
+        "same_pitch": [
+          0
+        ],
+        "input_behavior": [
+          0
+        ]
+      },
+      "checks": [
+        {
+          "name": "scale-nearest",
+          "passed": true
+        },
+        {
+          "name": "chord-nearest",
+          "passed": true
+        },
+        {
+          "name": "chord-map",
+          "passed": true
+        },
+        {
+          "name": "scale-map",
+          "passed": true
+        },
+        {
+          "name": "scale-up",
+          "passed": true
+        },
+        {
+          "name": "scale-down",
+          "passed": true
+        },
+        {
+          "name": "Contour history",
+          "passed": true
+        },
+        {
+          "name": "Stateful continuity",
+          "passed": true
+        },
+        {
+          "name": "SysEx source switch",
+          "passed": true
+        },
+        {
+          "name": "MIDI field source switch",
+          "passed": true
+        },
+        {
+          "name": "Hold has no immediate output",
+          "passed": true
+        },
+        {
+          "name": "Hold retains one note after short gate",
+          "passed": true
+        },
+        {
+          "name": "Hold exit releases mapped pitch",
+          "passed": true
+        },
+        {
+          "name": "Ensemble defers both edges",
+          "passed": true
+        },
+        {
+          "name": "Ensemble paired output",
+          "passed": true
+        },
+        {
+          "name": "Panic cancels pending note",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "result": "PASS",
+      "legacyGraph": true,
+      "time": "2026-10-27T02:42:06.960Z",
+      "initial": {
+        "quantizer_mode": [
+          2
+        ],
+        "continuity": [
+          60
+        ],
+        "register_mode": [
+          0
+        ],
+        "same_pitch": [
+          0
+        ],
+        "input_behavior": [
+          0
+        ]
+      },
+      "checks": [
+        {
+          "name": "Old embedded graph created native engine",
+          "passed": true
+        },
+        {
+          "name": "scale-nearest",
+          "passed": true
+        },
+        {
+          "name": "chord-nearest",
+          "passed": true
+        },
+        {
+          "name": "chord-map",
+          "passed": true
+        },
+        {
+          "name": "scale-map",
+          "passed": true
+        },
+        {
+          "name": "scale-up",
+          "passed": true
+        },
+        {
+          "name": "scale-down",
+          "passed": true
+        },
+        {
+          "name": "Contour history",
+          "passed": true
+        },
+        {
+          "name": "Stateful continuity",
+          "passed": true
+        },
+        {
+          "name": "SysEx source switch",
+          "passed": true
+        },
+        {
+          "name": "MIDI field source switch",
+          "passed": true
+        },
+        {
+          "name": "Hold has no immediate output",
+          "passed": true
+        },
+        {
+          "name": "Hold retains one note after short gate",
+          "passed": true
+        },
+        {
+          "name": "Hold exit releases mapped pitch",
+          "passed": true
+        },
+        {
+          "name": "Ensemble defers both edges",
+          "passed": true
+        },
+        {
+          "name": "Ensemble paired output",
+          "passed": true
+        },
+        {
+          "name": "Panic cancels pending note",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "ensemble": {
+    "result": "PASS",
+    "time": "2026-10-27T02:45:03.660Z",
+    "checks": [
+      {
+        "name": "Coordinated notes are not emitted early",
+        "passed": true
+      },
+      {
+        "name": "Four real instances choose distinct valid pitches",
+        "passed": true
+      },
+      {
+        "name": "All four offs return to their selected pitches",
+        "passed": true
+      },
+      {
+        "name": "Allocation priority rotates between real instances",
+        "passed": true
+      },
+      {
+        "name": "Zero separation has immediate unisons",
+        "passed": true
+      },
+      {
+        "name": "Hard registers retain possible unisons at 100 percent",
+        "passed": true
+      }
+    ]
+  },
+  "hardware_latency_verified": false
+}

@@ -1,3 +1,51 @@
+# v1.0.0-beta.2 — native quantizer, 2026-10-27
+
+Feature-frozen native quantizer beta. The existing device name and saved
+parameter identities are retained. macOS arm64/x86_64 native quantization now
+replaces the JS note-processing path; controls, receivers and displays stay JS.
+Hold/Settle and shared ensemble scheduling are native too. Raw MIDI never passes
+through a JS note callback. Zero-separation Follow Gate introduces no deliberate
+wait; Hold/Separation retain their explicitly configured musical windows.
+
+The runtime now requires the complete .mxo bundle and native build manifest.
+Builders reject stale binaries and installers back up existing devices/bundles.
+Old embedded patch wiring is upgraded within the device on load, without
+renaming controls or changing other tracks. Restart Live for a native binary
+update; save Sets after checking the updated wiring.
+
+Native safety fixes cover empty-field ownership, unmatched releases, canceled
+queued notes after bypass, invalid root gravity, missing-chord ceilings and
+impossible register windows. These are explicit, separately tested changes.
+The old engine is retained only as the differential-test oracle, not a runtime
+fallback or parallel device version.
+
+See [native migration](../native/README.md) and [latency audit](LATENCY_AUDIT.md)
+for evidence and limits. This port alone is not proof that T-1/FH-2 round-trip
+latency or jitter has been eliminated.
+
+## Completed acceptance
+
+Real Live production/legacy-graph, four-instance ensemble and parameter recall
+checks passed. The T-1 software-output comparison matched 3,337 Note Ons across
+the buffer/monitoring A/B conditions without extra/missing Ons. In the recorded
+green/on versus red/off audio comparison, all 32 pitch changes matched C-major
+nearest-note quantization and no additional quantizer delay was measurable.
+Recorded audio offsets are not absolute hardware round-trip latency.
+See [audio A/B](T1_AUDIO_AB_2026-10-27.md),
+[software timing](T1_TIMING_2026-10-27.md) and
+[Live validation](NATIVE_LIVE_VALIDATION_2026-10-26.json).
+
+The native bundle is macOS arm64/x86_64, locally ad-hoc signed, not notarized.
+Fresh-machine installation, sustained multi-device hardware stress and other
+host/platform combinations remain outside this beta's certification. ROTA is
+a separate project and is not included in this quantizer migration release.
+No new features or additional latency experiments are planned for this freeze.
+
+Local installation note: both Harmonic Quantizer library copies match this
+build. The studio's Plinky receiver has a separate MIDIMiscellany loop bridge
+extension; it was intentionally not overwritten or incorporated into this beta.
+The bundled receiver is the repository's tested standalone implementation.
+
 # v1.0.0-beta.1 — 2026-10-24
 
 This is a tagged beta checkpoint, not a stable release. Device names stay

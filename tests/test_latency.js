@@ -6,7 +6,7 @@ const midi=[],c=vm.createContext({Task,File,Math,Date:class extends Date{constru
  Global:function(n){return shared[n]||(shared[n]={});},arrayfromargs:a=>Array.from(a),messnamed(){},
  outlet(i,b){if(i===0)midi.push(b);else displayCalls++;},
  patcher:{getnamed(){return null;}}});
-vm.runInContext(fs.readFileSync(path.join(__dirname,'../Harmonic_Quantizer/harmonic_quantizer.js'),'utf8'),c);
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../tests/reference/harmonic_quantizer_legacy.js'),'utf8'),c);
 c.init();c.mode('nearest');c.registermode('free');c.timing('immediate');c.apply_valid_notes([1,0,'midi',0,2,4,5,7,9,11]);
 opens=0;displayCalls=0;c.handle_note_on(1,60,100);
 assert.deepStrictEqual(midi,[144,60,100]);assert.equal(opens,0);assert.equal(displayCalls,0);

@@ -15,7 +15,7 @@ if not (ROTA/'src/rota_device.js').is_file():
 OUT=args.output
 OUT.mkdir(exist_ok=True)
 (OUT/'latency_live_probe.js').write_bytes((HERE/'latency_live_probe.js').read_bytes())
-q=(ROOT/'Harmonic_Quantizer/harmonic_quantizer.js').read_text()
+q=(ROOT/'tests/reference/harmonic_quantizer_legacy.js').read_text()
 q=q.replace('tetrachords_harmony_v1','codex_latency_harmony').replace('tetrachords_ensemble_v1','codex_latency_ensemble').replace('tetrachords_motion_v1','codex_latency_motion')
 q=q.replace('/private/tmp/harmonic_quantizer_trace.tsv','/private/tmp/codex_latency_quantizer_trace.tsv')
 if args.matched:

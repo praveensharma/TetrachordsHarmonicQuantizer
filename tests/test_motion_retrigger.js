@@ -11,7 +11,7 @@ function studio(){
   vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c);c.init();return {c,out};
  }
  function quant(part=1,extra={}){
-  const d=context('Harmonic_Quantizer/harmonic_quantizer.js',Object.assign({ensemble_group:1,ensemble_part:part,ensemble_separation:0},extra));
+  const d=context('tests/reference/harmonic_quantizer_legacy.js',Object.assign({ensemble_group:1,ensemble_part:part,ensemble_separation:0},extra));
   d.c.mode('stateful-nearest');d.c.registermode('free');d.c.timing('immediate');d.c.apply_valid_notes([1,0,'midi',0,2,4,5,7,9,11]);
   d.c.ensemble_refresh();
   d.messages=()=>{const b=d.out.filter(x=>x[0]===0).map(x=>x[1]);assert.equal(b.length%3,0);return Array.from({length:b.length/3},(_,i)=>b.slice(i*3,i*3+3));};

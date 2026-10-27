@@ -12,12 +12,19 @@ func emit(_ object: [String: Any]) {
        let text = String(data: data, encoding: .utf8) { print(text); fflush(stdout) }
 }
 let args = CommandLine.arguments
+let sourceFilter = args.firstIndex(of: "--source").flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
 let seconds = Double(args.dropFirst().first ?? "30") ?? 30
 var client = MIDIClientRef()
 let created = MIDIClientCreate("Codex MIDI diagnostic" as CFString, nil, nil, &client)
 guard created == noErr else { emit(["error": "MIDIClientCreate", "status": created]); exit(1) }
 var port = MIDIPortRef()
 let sourceNames = (0..<MIDIGetNumberOfSources()).map { name(MIDIGetSource($0)) }
+if args.contains("--list") {
+    for label in sourceNames { emit(["source": label]) }
+    for i in 0..<MIDIGetNumberOfDestinations() { emit(["destination": name(MIDIGetDestination(i))]) }
+    MIDIClientDispose(client)
+    exit(0)
+}
 let input = MIDIInputPortCreateWithBlock(client, "Read-only capture" as CFString, &port) { packets, context in
     let index = Int(bitPattern: context) - 1
     let source = index >= 0 && index < sourceNames.count ? sourceNames[index] : "unknown"
@@ -33,7 +40,7 @@ let input = MIDIInputPortCreateWithBlock(client, "Read-only capture" as CFString
 guard input == noErr else { emit(["error": "MIDIInputPortCreate", "status": input]); exit(1) }
 for i in 0..<sourceNames.count {
     let endpoint = MIDIGetSource(i), label = sourceNames[i]
-    if label.lowercased().contains("plinky") || label.contains("FH-2") || label.contains("Muse") {
+    if sourceFilter.map({ label == $0 }) ?? (label.lowercased().contains("plinky") || label.contains("FH-2") || label.contains("Muse")) {
         let status = MIDIPortConnectSource(port, endpoint, UnsafeMutableRawPointer(bitPattern: Int(i)+1))
         emit(["connected": label, "status": status])
     }

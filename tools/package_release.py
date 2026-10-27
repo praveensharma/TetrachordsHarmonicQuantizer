@@ -38,7 +38,11 @@ def main():
     for path in sorted((ROOT / "dist").iterdir()):
         if path.is_file() and path.suffix in (".amxd", ".js"):
             files["Devices/" + path.name] = path.read_bytes()
-    expected = (2, 3) if rota else (5, 8)
+    if not rota:
+        for path in sorted((ROOT/'dist/tetrachords.quantizer.mxo').rglob('*')):
+            if path.is_file(): files['Devices/'+path.relative_to(ROOT/'dist').as_posix()] = path.read_bytes()
+        files['Devices/native_build.json']=(ROOT/'dist/native_build.json').read_bytes()
+    expected = (2, 3) if rota else (5, 9)
     actual = tuple(sum(name.endswith(ext) for name in files) for ext in (".amxd", ".js"))
     if actual != expected:
         raise RuntimeError(f"Unexpected AMXD/script inventory: {actual}, expected {expected}")
@@ -56,7 +60,8 @@ def main():
         "2. Quit Live before replacing an existing library installation.\n"
         "3. Copy ALL files from Devices together into one folder in your Ableton\n"
         "   User Library, for example Presets/MIDI Effects/Max MIDI Effect/" + project + ".\n"
-        "   Do not copy only the AMXDs: the adjacent JavaScript files are required.\n"
+        "   Do not copy only the AMXDs: all adjacent support files are required.\n"
+        + ("" if rota else "   macOS only: keep tetrachords.quantizer.mxo and native_build.json together too.\n") +
         "4. Open Live and drag the AMXD devices from that folder onto MIDI tracks.\n"
         "5. Existing Sets may retain embedded older device definitions. Reload or\n"
         "   replace updated devices, check parameters/routing, then save a copy.\n\n"
@@ -67,7 +72,7 @@ def main():
     files["BUILD.json"] = (json.dumps({
         "project": project, "version": args.version, "commit": git("rev-parse", "HEAD"),
         "dirty": dirty, "amxd_count": actual[0], "javascript_count": actual[1],
-        "format": "AMXD with required external JavaScript sidecars; not frozen",
+        "format": "AMXD with required support sidecars; native macOS quantizer" if not rota else "AMXD with required JavaScript sidecars",
     }, indent=2) + "\n").encode()
     sums = "".join(hashlib.sha256(data).hexdigest() + "  " + name + "\n"
                    for name, data in sorted(files.items()))
@@ -81,7 +86,7 @@ def main():
         for name, data in sorted(files.items()):
             info = zipfile.ZipInfo(prefix + "/" + name, (2026, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = 0o100644 << 16
+            info.external_attr = (0o100755 if '/Contents/MacOS/' in name else 0o100644) << 16
             bundle.writestr(info, data)
     with zipfile.ZipFile(archive) as bundle:
         assert bundle.testzip() is None

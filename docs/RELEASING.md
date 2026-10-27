@@ -4,11 +4,12 @@ Run the project build and automated tests, then commit all source and `dist/`
 changes. From a clean checkout:
 
 ```sh
-python3 tools/package_release.py --version v1.0.0-beta.1 --output /private/tmp/device-releases
+python3 tools/package_release.py --version v1.0.0-beta.2 --output /private/tmp/device-releases
 ```
 
 The script verifies source/distribution consistency before packaging. It includes
-every runtime AMXD and JavaScript sidecar, installation notes, release notes,
+every runtime AMXD and JavaScript sidecar, the complete native macOS external
+and build manifest, installation notes, release notes,
 source commit metadata and per-file SHA-256 checksums. It reads but does not install
 or modify devices in the User Library. Outputs must be outside the checkout.
 

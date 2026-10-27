@@ -1,0 +1,1459 @@
+{
+  "scope": "Recorded audio versus recorded input MIDI; not absolute latency",
+  "set": "native/build/UntitledNative Validation Project/Timing AB Green Red 2026-10-27.als",
+  "tempo": 124.0,
+  "onsetResolutionMs": 0.5,
+  "searchRadiusMs": 35,
+  "takes": [
+    {
+      "label": "green/on",
+      "audioClip": "New Audio Track 11",
+      "midiClip": "New MIDI Track 10",
+      "source": "/Users/praveen/Documents/ChatGPT/Tetrachords Quantizer/implementation/native/build/UntitledNative Validation Project/Samples/Recorded/New Audio Track 0007 [2026-10-27 142547].aif",
+      "notes": 32,
+      "inputPitches": [
+        72,
+        73,
+        74,
+        75,
+        80,
+        83,
+        85,
+        87,
+        81,
+        82,
+        83,
+        84,
+        85,
+        88,
+        90,
+        92,
+        72,
+        73,
+        74,
+        75,
+        80,
+        83,
+        85,
+        87,
+        81,
+        82,
+        83,
+        84,
+        85,
+        88,
+        90,
+        92
+      ],
+      "windows": [
+        {
+          "windowMs": 5,
+          "medianMs": 0.5208757975898592,
+          "p5Ms": -0.4145460889916519,
+          "p95Ms": 0.8750089124581528,
+          "minMs": -1.6250422964132483,
+          "maxMs": 0.8958702587733569,
+          "stdMs": 0.5086120966848907,
+          "minimumRiseLogRatio": 3.918047606553402,
+          "points": [
+            {
+              "expectedSeconds": 0.005604148875318231,
+              "onsetSeconds": 0.0055,
+              "offsetMs": -0.10414887531823118,
+              "energyRiseLogRatio": 13.972350015555078
+            },
+            {
+              "expectedSeconds": 0.48962504229641324,
+              "onsetSeconds": 0.488,
+              "offsetMs": -1.6250422964132483,
+              "energyRiseLogRatio": 9.400285807900177
+            },
+            {
+              "expectedSeconds": 0.973562475830621,
+              "onsetSeconds": 0.974,
+              "offsetMs": 0.43752416937892225,
+              "energyRiseLogRatio": 6.617212930774179
+            },
+            {
+              "expectedSeconds": 1.4574374718023912,
+              "onsetSeconds": 1.457,
+              "offsetMs": -0.4374718023911761,
+              "energyRiseLogRatio": 5.705152290028709
+            },
+            {
+              "expectedSeconds": 1.9413958017788664,
+              "onsetSeconds": 1.9415,
+              "offsetMs": 0.10419822113361121,
+              "energyRiseLogRatio": 5.5187358987296085
+            },
+            {
+              "expectedSeconds": 2.425104129741227,
+              "onsetSeconds": 2.426,
+              "offsetMs": 0.8958702587733569,
+              "energyRiseLogRatio": 5.948184042798022
+            },
+            {
+              "expectedSeconds": 2.909104126720054,
+              "onsetSeconds": 2.9095,
+              "offsetMs": 0.3958732799458353,
+              "energyRiseLogRatio": 5.793301818511172
+            },
+            {
+              "expectedSeconds": 3.3928957886871194,
+              "onsetSeconds": 3.3925,
+              "offsetMs": -0.3957886871193139,
+              "energyRiseLogRatio": 6.1737908117508535
+            },
+            {
+              "expectedSeconds": 3.876833348103509,
+              "onsetSeconds": 3.8775,
+              "offsetMs": 0.6666518964908441,
+              "energyRiseLogRatio": 6.312903459912417
+            },
+            {
+              "expectedSeconds": 4.360645780630659,
+              "onsetSeconds": 4.3615,
+              "offsetMs": 0.8542193693417133,
+              "energyRiseLogRatio": 5.402619467906861
+            },
+            {
+              "expectedSeconds": 4.844645777609487,
+              "onsetSeconds": 4.845,
+              "offsetMs": 0.3542223905128594,
+              "energyRiseLogRatio": 5.698437352085774
+            },
+            {
+              "expectedSeconds": 5.328145770560085,
+              "onsetSeconds": 5.329,
+              "offsetMs": 0.8542294399145334,
+              "energyRiseLogRatio": 5.727229128574332
+            },
+            {
+              "expectedSeconds": 5.812124996978828,
+              "onsetSeconds": 5.813,
+              "offsetMs": 0.8750030211714943,
+              "energyRiseLogRatio": 5.753972105313212
+            },
+            {
+              "expectedSeconds": 6.296166660960008,
+              "onsetSeconds": 6.297,
+              "offsetMs": 0.8333390399917207,
+              "energyRiseLogRatio": 6.043122379563241
+            },
+            {
+              "expectedSeconds": 6.779895885364635,
+              "onsetSeconds": 6.7805,
+              "offsetMs": 0.6041146353652493,
+              "energyRiseLogRatio": 6.115854814017602
+            },
+            {
+              "expectedSeconds": 7.26362498388708,
+              "onsetSeconds": 7.2645,
+              "offsetMs": 0.8750161129196243,
+              "energyRiseLogRatio": 6.535027656880676
+            },
+            {
+              "expectedSeconds": 7.747937546324644,
+              "onsetSeconds": 7.7485,
+              "offsetMs": 0.5624536753563447,
+              "energyRiseLogRatio": 6.870326159422519
+            },
+            {
+              "expectedSeconds": 8.23170831184944,
+              "onsetSeconds": 8.2325,
+              "offsetMs": 0.791688150560077,
+              "energyRiseLogRatio": 4.327670356590602
+            },
+            {
+              "expectedSeconds": 8.715395869251715,
+              "onsetSeconds": 8.7155,
+              "offsetMs": 0.10413074828541369,
+              "energyRiseLogRatio": 4.473691560132909
+            },
+            {
+              "expectedSeconds": 9.1995208672376,
+              "onsetSeconds": 9.2,
+              "offsetMs": 0.47913276239874847,
+              "energyRiseLogRatio": 3.918047606553402
+            },
+            {
+              "expectedSeconds": 9.683166631755341,
+              "onsetSeconds": 9.6835,
+              "offsetMs": 0.33336824465912684,
+              "energyRiseLogRatio": 4.155980799382245
+            },
+            {
+              "expectedSeconds": 10.166999960724759,
+              "onsetSeconds": 10.1675,
+              "offsetMs": 0.5000392752414484,
+              "energyRiseLogRatio": 5.058984963131892
+            },
+            {
+              "expectedSeconds": 10.650770852131739,
+              "onsetSeconds": 10.6515,
+              "offsetMs": 0.7291478682613928,
+              "energyRiseLogRatio": 5.31880214455893
+            },
+            {
+              "expectedSeconds": 11.134958287680062,
+              "onsetSeconds": 11.1355,
+              "offsetMs": 0.5417123199382701,
+              "energyRiseLogRatio": 5.587287635639051
+            },
+            {
+              "expectedSeconds": 11.618812513091749,
+              "onsetSeconds": 11.6195,
+              "offsetMs": 0.6874869082516,
+              "energyRiseLogRatio": 5.921756744112555
+            },
+            {
+              "expectedSeconds": 12.102791613628307,
+              "onsetSeconds": 12.1035,
+              "offsetMs": 0.708386371693237,
+              "energyRiseLogRatio": 4.733162685851556
+            },
+            {
+              "expectedSeconds": 12.586249939576552,
+              "onsetSeconds": 12.5865,
+              "offsetMs": 0.2500604234469961,
+              "energyRiseLogRatio": 5.09136017321084
+            },
+            {
+              "expectedSeconds": 13.070187498992942,
+              "onsetSeconds": 13.0705,
+              "offsetMs": 0.31250100705726425,
+              "energyRiseLogRatio": 5.101803574259129
+            },
+            {
+              "expectedSeconds": 13.554229162974123,
+              "onsetSeconds": 13.555,
+              "offsetMs": 0.7708370258772135,
+              "energyRiseLogRatio": 5.2648563080926944
+            },
+            {
+              "expectedSeconds": 14.037729155924719,
+              "onsetSeconds": 14.0385,
+              "offsetMs": 0.7708440752818291,
+              "energyRiseLogRatio": 5.700015586161874
+            },
+            {
+              "expectedSeconds": 14.522020821920016,
+              "onsetSeconds": 14.522,
+              "offsetMs": -0.020821920015734463,
+              "energyRiseLogRatio": 5.887740688380635
+            },
+            {
+              "expectedSeconds": 15.005708379322291,
+              "onsetSeconds": 15.006,
+              "offsetMs": 0.291620677709048,
+              "energyRiseLogRatio": 6.127817343650897
+            }
+          ]
+        },
+        {
+          "windowMs": 8,
+          "medianMs": 0.6041644847089023,
+          "p5Ms": -0.2833104395606689,
+          "p95Ms": 0.9593965510296897,
+          "minMs": -0.8333481035092127,
+          "maxMs": 2.3958511246817693,
+          "stdMs": 0.5150477320653446,
+          "minimumRiseLogRatio": 1.3968675098551713,
+          "points": [
+            {
+              "expectedSeconds": 0.005604148875318231,
+              "onsetSeconds": 0.008,
+              "offsetMs": 2.3958511246817693,
+              "energyRiseLogRatio": 1.3968675098551713
+            },
+            {
+              "expectedSeconds": 0.48962504229641324,
+              "onsetSeconds": 0.4905,
+              "offsetMs": 0.874957703586754,
+              "energyRiseLogRatio": 9.47369921410705
+            },
+            {
+              "expectedSeconds": 0.973562475830621,
+              "onsetSeconds": 0.974,
+              "offsetMs": 0.43752416937892225,
+              "energyRiseLogRatio": 6.665033314403854
+            },
+            {
+              "expectedSeconds": 1.4574374718023912,
+              "onsetSeconds": 1.4585,
+              "offsetMs": 1.0625281976086587,
+              "energyRiseLogRatio": 5.54234184154159
+            },
+            {
+              "expectedSeconds": 1.9413958017788664,
+              "onsetSeconds": 1.942,
+              "offsetMs": 0.6041982211335561,
+              "energyRiseLogRatio": 5.354202287354864
+            },
+            {
+              "expectedSeconds": 2.425104129741227,
+              "onsetSeconds": 2.4245,
+              "offsetMs": -0.6041297412266999,
+              "energyRiseLogRatio": 5.911169160107542
+            },
+            {
+              "expectedSeconds": 2.909104126720054,
+              "onsetSeconds": 2.9095,
+              "offsetMs": 0.3958732799458353,
+              "energyRiseLogRatio": 5.988013065283858
+            },
+            {
+              "expectedSeconds": 3.3928957886871194,
+              "onsetSeconds": 3.3935,
+              "offsetMs": 0.604211312880576,
+              "energyRiseLogRatio": 6.15934151207253
+            },
+            {
+              "expectedSeconds": 3.876833348103509,
+              "onsetSeconds": 3.876,
+              "offsetMs": -0.8333481035092127,
+              "energyRiseLogRatio": 6.409067350041816
+            },
+            {
+              "expectedSeconds": 4.360645780630659,
+              "onsetSeconds": 4.3615,
+              "offsetMs": 0.8542193693417133,
+              "energyRiseLogRatio": 5.4352618726349275
+            },
+            {
+              "expectedSeconds": 4.844645777609487,
+              "onsetSeconds": 4.845,
+              "offsetMs": 0.3542223905128594,
+              "energyRiseLogRatio": 5.517063369798911
+            },
+            {
+              "expectedSeconds": 5.328145770560085,
+              "onsetSeconds": 5.329,
+              "offsetMs": 0.8542294399145334,
+              "energyRiseLogRatio": 5.515513512426565
+            },
+            {
+              "expectedSeconds": 5.812124996978828,
+              "onsetSeconds": 5.813,
+              "offsetMs": 0.8750030211714943,
+              "energyRiseLogRatio": 5.656684706925388
+            },
+            {
+              "expectedSeconds": 6.296166660960008,
+              "onsetSeconds": 6.297,
+              "offsetMs": 0.8333390399917207,
+              "energyRiseLogRatio": 5.940710621169908
+            },
+            {
+              "expectedSeconds": 6.779895885364635,
+              "onsetSeconds": 6.7805,
+              "offsetMs": 0.6041146353652493,
+              "energyRiseLogRatio": 6.094816630153453
+            },
+            {
+              "expectedSeconds": 7.26362498388708,
+              "onsetSeconds": 7.2645,
+              "offsetMs": 0.8750161129196243,
+              "energyRiseLogRatio": 6.516642074756847
+            },
+            {
+              "expectedSeconds": 7.747937546324644,
+              "onsetSeconds": 7.7485,
+              "offsetMs": 0.5624536753563447,
+              "energyRiseLogRatio": 6.775617024081726
+            },
+            {
+              "expectedSeconds": 8.23170831184944,
+              "onsetSeconds": 8.2325,
+              "offsetMs": 0.791688150560077,
+              "energyRiseLogRatio": 4.098752715900231
+            },
+            {
+              "expectedSeconds": 8.715395869251715,
+              "onsetSeconds": 8.716,
+              "offsetMs": 0.6041307482842484,
+              "energyRiseLogRatio": 3.937456602700217
+            },
+            {
+              "expectedSeconds": 9.1995208672376,
+              "onsetSeconds": 9.2,
+              "offsetMs": 0.47913276239874847,
+              "energyRiseLogRatio": 4.367007471581723
+            },
+            {
+              "expectedSeconds": 9.683166631755341,
+              "onsetSeconds": 9.684,
+              "offsetMs": 0.8333682446579616,
+              "energyRiseLogRatio": 4.340267181872119
+            },
+            {
+              "expectedSeconds": 10.166999960724759,
+              "onsetSeconds": 10.1675,
+              "offsetMs": 0.5000392752414484,
+              "energyRiseLogRatio": 4.839094624943981
+            },
+            {
+              "expectedSeconds": 10.650770852131739,
+              "onsetSeconds": 10.6515,
+              "offsetMs": 0.7291478682613928,
+              "energyRiseLogRatio": 5.2010301228916145
+            },
+            {
+              "expectedSeconds": 11.134958287680062,
+              "onsetSeconds": 11.1355,
+              "offsetMs": 0.5417123199382701,
+              "energyRiseLogRatio": 5.63425883140319
+            },
+            {
+              "expectedSeconds": 11.618812513091749,
+              "onsetSeconds": 11.6195,
+              "offsetMs": 0.6874869082516,
+              "energyRiseLogRatio": 5.9451526631402825
+            },
+            {
+              "expectedSeconds": 12.102791613628307,
+              "onsetSeconds": 12.103,
+              "offsetMs": 0.20838637169262597,
+              "energyRiseLogRatio": 5.055986915417761
+            },
+            {
+              "expectedSeconds": 12.586249939576552,
+              "onsetSeconds": 12.587,
+              "offsetMs": 0.7500604234476071,
+              "energyRiseLogRatio": 5.201663749702052
+            },
+            {
+              "expectedSeconds": 13.070187498992942,
+              "onsetSeconds": 13.0705,
+              "offsetMs": 0.31250100705726425,
+              "energyRiseLogRatio": 5.1204471478273375
+            },
+            {
+              "expectedSeconds": 13.554229162974123,
+              "onsetSeconds": 13.555,
+              "offsetMs": 0.7708370258772135,
+              "energyRiseLogRatio": 5.226570542996058
+            },
+            {
+              "expectedSeconds": 14.037729155924719,
+              "onsetSeconds": 14.038,
+              "offsetMs": 0.270844075281218,
+              "energyRiseLogRatio": 5.559161648626667
+            },
+            {
+              "expectedSeconds": 14.522020821920016,
+              "onsetSeconds": 14.522,
+              "offsetMs": -0.020821920015734463,
+              "energyRiseLogRatio": 5.830658901277378
+            },
+            {
+              "expectedSeconds": 15.005708379322291,
+              "onsetSeconds": 15.006,
+              "offsetMs": 0.291620677709048,
+              "energyRiseLogRatio": 6.1802878027944
+            }
+          ]
+        },
+        {
+          "windowMs": 10,
+          "medianMs": 0.6041629741229126,
+          "p5Ms": -1.139553289452655,
+          "p95Ms": 0.884400478553804,
+          "minMs": -2.166631755342152,
+          "maxMs": 4.395851124681769,
+          "stdMs": 0.9867111796812116,
+          "minimumRiseLogRatio": 0.42000015559515713,
+          "points": [
+            {
+              "expectedSeconds": 0.005604148875318231,
+              "onsetSeconds": 0.01,
+              "offsetMs": 4.395851124681769,
+              "energyRiseLogRatio": 0.42000015559515713
+            },
+            {
+              "expectedSeconds": 0.48962504229641324,
+              "onsetSeconds": 0.4905,
+              "offsetMs": 0.874957703586754,
+              "energyRiseLogRatio": 9.33107278868041
+            },
+            {
+              "expectedSeconds": 0.973562475830621,
+              "onsetSeconds": 0.974,
+              "offsetMs": 0.43752416937892225,
+              "energyRiseLogRatio": 6.7001247418236645
+            },
+            {
+              "expectedSeconds": 1.4574374718023912,
+              "onsetSeconds": 1.456,
+              "offsetMs": -1.437471802391288,
+              "energyRiseLogRatio": 5.626963843251549
+            },
+            {
+              "expectedSeconds": 1.9413958017788664,
+              "onsetSeconds": 1.9405,
+              "offsetMs": -0.8958017788665007,
+              "energyRiseLogRatio": 5.59029315539102
+            },
+            {
+              "expectedSeconds": 2.425104129741227,
+              "onsetSeconds": 2.426,
+              "offsetMs": 0.8958702587733569,
+              "energyRiseLogRatio": 5.8698794489958805
+            },
+            {
+              "expectedSeconds": 2.909104126720054,
+              "onsetSeconds": 2.9085,
+              "offsetMs": -0.6041267200540545,
+              "energyRiseLogRatio": 5.960191812655162
+            },
+            {
+              "expectedSeconds": 3.3928957886871194,
+              "onsetSeconds": 3.3935,
+              "offsetMs": 0.604211312880576,
+              "energyRiseLogRatio": 6.2457446554028415
+            },
+            {
+              "expectedSeconds": 3.876833348103509,
+              "onsetSeconds": 3.8775,
+              "offsetMs": 0.6666518964908441,
+              "energyRiseLogRatio": 6.462812437371186
+            },
+            {
+              "expectedSeconds": 4.360645780630659,
+              "onsetSeconds": 4.3615,
+              "offsetMs": 0.8542193693417133,
+              "energyRiseLogRatio": 5.414401067098722
+            },
+            {
+              "expectedSeconds": 4.844645777609487,
+              "onsetSeconds": 4.845,
+              "offsetMs": 0.3542223905128594,
+              "energyRiseLogRatio": 5.608773970160868
+            },
+            {
+              "expectedSeconds": 5.328145770560085,
+              "onsetSeconds": 5.329,
+              "offsetMs": 0.8542294399145334,
+              "energyRiseLogRatio": 5.544034533704206
+            },
+            {
+              "expectedSeconds": 5.812124996978828,
+              "onsetSeconds": 5.813,
+              "offsetMs": 0.8750030211714943,
+              "energyRiseLogRatio": 5.530398250102204
+            },
+            {
+              "expectedSeconds": 6.296166660960008,
+              "onsetSeconds": 6.297,
+              "offsetMs": 0.8333390399917207,
+              "energyRiseLogRatio": 5.79405675774369
+            },
+            {
+              "expectedSeconds": 6.779895885364635,
+              "onsetSeconds": 6.7805,
+              "offsetMs": 0.6041146353652493,
+              "energyRiseLogRatio": 6.09722525262932
+            },
+            {
+              "expectedSeconds": 7.26362498388708,
+              "onsetSeconds": 7.2645,
+              "offsetMs": 0.8750161129196243,
+              "energyRiseLogRatio": 6.467010787781056
+            },
+            {
+              "expectedSeconds": 7.747937546324644,
+              "onsetSeconds": 7.7485,
+              "offsetMs": 0.5624536753563447,
+              "energyRiseLogRatio": 6.704328737824628
+            },
+            {
+              "expectedSeconds": 8.23170831184944,
+              "onsetSeconds": 8.2325,
+              "offsetMs": 0.791688150560077,
+              "energyRiseLogRatio": 4.227233865171324
+            },
+            {
+              "expectedSeconds": 8.715395869251715,
+              "onsetSeconds": 8.7155,
+              "offsetMs": 0.10413074828541369,
+              "energyRiseLogRatio": 4.174227665387801
+            },
+            {
+              "expectedSeconds": 9.1995208672376,
+              "onsetSeconds": 9.2,
+              "offsetMs": 0.47913276239874847,
+              "energyRiseLogRatio": 4.175937008835471
+            },
+            {
+              "expectedSeconds": 9.683166631755341,
+              "onsetSeconds": 9.681,
+              "offsetMs": -2.166631755342152,
+              "energyRiseLogRatio": 4.3124663836401895
+            },
+            {
+              "expectedSeconds": 10.166999960724759,
+              "onsetSeconds": 10.1675,
+              "offsetMs": 0.5000392752414484,
+              "energyRiseLogRatio": 5.028139598167771
+            },
+            {
+              "expectedSeconds": 10.650770852131739,
+              "onsetSeconds": 10.6515,
+              "offsetMs": 0.7291478682613928,
+              "energyRiseLogRatio": 5.113360505165057
+            },
+            {
+              "expectedSeconds": 11.134958287680062,
+              "onsetSeconds": 11.1355,
+              "offsetMs": 0.5417123199382701,
+              "energyRiseLogRatio": 5.514000383131443
+            },
+            {
+              "expectedSeconds": 11.618812513091749,
+              "onsetSeconds": 11.6195,
+              "offsetMs": 0.6874869082516,
+              "energyRiseLogRatio": 5.950137126151821
+            },
+            {
+              "expectedSeconds": 12.102791613628307,
+              "onsetSeconds": 12.1035,
+              "offsetMs": 0.708386371693237,
+              "energyRiseLogRatio": 4.827752274274841
+            },
+            {
+              "expectedSeconds": 12.586249939576552,
+              "onsetSeconds": 12.5865,
+              "offsetMs": 0.2500604234469961,
+              "energyRiseLogRatio": 5.227780140111693
+            },
+            {
+              "expectedSeconds": 13.070187498992942,
+              "onsetSeconds": 13.0705,
+              "offsetMs": 0.31250100705726425,
+              "energyRiseLogRatio": 5.231164186007105
+            },
+            {
+              "expectedSeconds": 13.554229162974123,
+              "onsetSeconds": 13.555,
+              "offsetMs": 0.7708370258772135,
+              "energyRiseLogRatio": 5.373397230135373
+            },
+            {
+              "expectedSeconds": 14.037729155924719,
+              "onsetSeconds": 14.0385,
+              "offsetMs": 0.7708440752818291,
+              "energyRiseLogRatio": 5.4991462651943745
+            },
+            {
+              "expectedSeconds": 14.522020821920016,
+              "onsetSeconds": 14.522,
+              "offsetMs": -0.020821920015734463,
+              "energyRiseLogRatio": 5.706132291607411
+            },
+            {
+              "expectedSeconds": 15.005708379322291,
+              "onsetSeconds": 15.006,
+              "offsetMs": 0.291620677709048,
+              "energyRiseLogRatio": 6.1167843599236855
+            }
+          ]
+        }
+      ],
+      "dominantPeakMidiEstimates": [
+        35.54796681248774,
+        37.431598968548535,
+        37.431598968548535,
+        39.60896142459892,
+        44.51053956886321,
+        46.52326891772001,
+        49.6091629916855,
+        51.53008957751709,
+        44.51053956886321,
+        46.52326891772001,
+        46.52326891772001,
+        47.54796681248774,
+        49.6091629916855,
+        51.53008957751709,
+        54.567516821141616,
+        56.56972711536998,
+        35.54796681248774,
+        37.6091629916855,
+        37.6091629916855,
+        39.60896142459892,
+        44.51053956886321,
+        46.52326891772001,
+        49.6091629916855,
+        51.53008957751709,
+        44.628713000339374,
+        46.52326891772001,
+        46.52326891772001,
+        47.54796681248774,
+        49.6091629916855,
+        51.60896142459892,
+        54.567516821141616,
+        56.56972711536998
+      ]
+    },
+    {
+      "label": "red/off",
+      "audioClip": "New Audio Track",
+      "midiClip": "New MIDI Track",
+      "source": "/Users/praveen/Documents/ChatGPT/Tetrachords Quantizer/implementation/native/build/UntitledNative Validation Project/Samples/Recorded/New Audio Track 0008 [2026-10-27 144334].aif",
+      "notes": 32,
+      "inputPitches": [
+        72,
+        73,
+        74,
+        75,
+        80,
+        83,
+        85,
+        87,
+        81,
+        82,
+        83,
+        84,
+        85,
+        88,
+        90,
+        92,
+        72,
+        73,
+        74,
+        75,
+        80,
+        83,
+        85,
+        87,
+        81,
+        82,
+        83,
+        84,
+        85,
+        88,
+        90,
+        92
+      ],
+      "windows": [
+        {
+          "windowMs": 5,
+          "medianMs": 0.583294225935354,
+          "p5Ms": -0.09172163522030984,
+          "p95Ms": 0.9750154079789296,
+          "minMs": -0.7083470964519556,
+          "maxMs": 1.0416347765136447,
+          "stdMs": 0.3764013269043811,
+          "minimumRiseLogRatio": 3.6206384322032314,
+          "points": [
+            {
+              "expectedSeconds": 0.0054167103058232096,
+              "onsetSeconds": 0.006,
+              "offsetMs": 0.5832896941767906,
+              "energyRiseLogRatio": 14.641909016990642
+            },
+            {
+              "expectedSeconds": 0.4893958108423834,
+              "onsetSeconds": 0.4895,
+              "offsetMs": 0.10418915761656322,
+              "energyRiseLogRatio": 4.837932827547719
+            },
+            {
+              "expectedSeconds": 0.9736667062775934,
+              "onsetSeconds": 0.9745,
+              "offsetMs": 0.8332937224065917,
+              "energyRiseLogRatio": 4.078990535058277
+            },
+            {
+              "expectedSeconds": 1.457416701242306,
+              "onsetSeconds": 1.458,
+              "offsetMs": 0.5832987576939175,
+              "energyRiseLogRatio": 4.548817916958992
+            },
+            {
+              "expectedSeconds": 1.9414583652234862,
+              "onsetSeconds": 1.9425,
+              "offsetMs": 1.0416347765136447,
+              "energyRiseLogRatio": 4.033695671026642
+            },
+            {
+              "expectedSeconds": 2.424958358174084,
+              "onsetSeconds": 2.4255,
+              "offsetMs": 0.5416418259160949,
+              "energyRiseLogRatio": 4.738832175599083
+            },
+            {
+              "expectedSeconds": 2.908979125712997,
+              "onsetSeconds": 2.9095,
+              "offsetMs": 0.5208742870030925,
+              "energyRiseLogRatio": 5.248450721598986
+            },
+            {
+              "expectedSeconds": 3.3929374556894722,
+              "onsetSeconds": 3.3935,
+              "offsetMs": 0.5625443105277128,
+              "energyRiseLogRatio": 5.393217306245487
+            },
+            {
+              "expectedSeconds": 3.876708347096452,
+              "onsetSeconds": 3.876,
+              "offsetMs": -0.7083470964519556,
+              "energyRiseLogRatio": 5.45868330092149
+            },
+            {
+              "expectedSeconds": 4.360708344075279,
+              "onsetSeconds": 4.3615,
+              "offsetMs": 0.7916559247211907,
+              "energyRiseLogRatio": 4.922715206240204
+            },
+            {
+              "expectedSeconds": 4.844437442597725,
+              "onsetSeconds": 4.845,
+              "offsetMs": 0.5625574022749547,
+              "energyRiseLogRatio": 4.709464167114529
+            },
+            {
+              "expectedSeconds": 5.328479106578905,
+              "onsetSeconds": 5.3295,
+              "offsetMs": 1.020893421095792,
+              "energyRiseLogRatio": 4.912677874126737
+            },
+            {
+              "expectedSeconds": 5.811958328969418,
+              "onsetSeconds": 5.8125,
+              "offsetMs": 0.5416710305823358,
+              "energyRiseLogRatio": 5.247530886297956
+            },
+            {
+              "expectedSeconds": 6.2962292244046285,
+              "onsetSeconds": 6.296,
+              "offsetMs": -0.22922440462824767,
+              "energyRiseLogRatio": 5.158615162358696
+            },
+            {
+              "expectedSeconds": 6.779979219369341,
+              "onsetSeconds": 6.78,
+              "offsetMs": 0.020780630658912003,
+              "energyRiseLogRatio": 5.705256743397551
+            },
+            {
+              "expectedSeconds": 7.264062550352873,
+              "onsetSeconds": 7.265,
+              "offsetMs": 0.9374496471270533,
+              "energyRiseLogRatio": 5.84478092265757
+            },
+            {
+              "expectedSeconds": 7.747749981872966,
+              "onsetSeconds": 7.7485,
+              "offsetMs": 0.7500181270341244,
+              "energyRiseLogRatio": 6.167944066781093
+            },
+            {
+              "expectedSeconds": 8.231499976837677,
+              "onsetSeconds": 8.232,
+              "offsetMs": 0.5000231623224494,
+              "energyRiseLogRatio": 4.304184637657331
+            },
+            {
+              "expectedSeconds": 8.715562537261125,
+              "onsetSeconds": 8.7165,
+              "offsetMs": 0.9374627388751833,
+              "energyRiseLogRatio": 3.6206384322032314
+            },
+            {
+              "expectedSeconds": 9.199249968781219,
+              "onsetSeconds": 9.2,
+              "offsetMs": 0.7500312187804781,
+              "energyRiseLogRatio": 4.407069438314694
+            },
+            {
+              "expectedSeconds": 9.683270862202313,
+              "onsetSeconds": 9.684,
+              "offsetMs": 0.7291377976859081,
+              "energyRiseLogRatio": 3.882324419344335
+            },
+            {
+              "expectedSeconds": 10.167020857167026,
+              "onsetSeconds": 10.1675,
+              "offsetMs": 0.4791428329742331,
+              "energyRiseLogRatio": 4.634677073083708
+            },
+            {
+              "expectedSeconds": 10.651062521148207,
+              "onsetSeconds": 10.652,
+              "offsetMs": 0.937478851792406,
+              "energyRiseLogRatio": 5.193299221748015
+            },
+            {
+              "expectedSeconds": 11.134812516112918,
+              "onsetSeconds": 11.1355,
+              "offsetMs": 0.6874838870825073,
+              "energyRiseLogRatio": 5.414635652310798
+            },
+            {
+              "expectedSeconds": 11.6188541800941,
+              "onsetSeconds": 11.619,
+              "offsetMs": 0.14581990589945804,
+              "energyRiseLogRatio": 5.429816460420797
+            },
+            {
+              "expectedSeconds": 12.102583278616542,
+              "onsetSeconds": 12.1035,
+              "offsetMs": 0.9167213834579968,
+              "energyRiseLogRatio": 4.820561223142653
+            },
+            {
+              "expectedSeconds": 12.58627083601882,
+              "onsetSeconds": 12.587,
+              "offsetMs": 0.7291639811803918,
+              "energyRiseLogRatio": 4.882663107876579
+            },
+            {
+              "expectedSeconds": 13.070083394428153,
+              "onsetSeconds": 13.071,
+              "offsetMs": 0.916605571847029,
+              "energyRiseLogRatio": 5.117016906112073
+            },
+            {
+              "expectedSeconds": 13.554333393421095,
+              "onsetSeconds": 13.555,
+              "offsetMs": 0.6666065789051601,
+              "energyRiseLogRatio": 5.246201654289958
+            },
+            {
+              "expectedSeconds": 14.03808338838581,
+              "onsetSeconds": 14.0385,
+              "offsetMs": 0.41661161419170867,
+              "energyRiseLogRatio": 5.272867144026642
+            },
+            {
+              "expectedSeconds": 14.521854153910606,
+              "onsetSeconds": 14.522,
+              "offsetMs": 0.14584608939394172,
+              "energyRiseLogRatio": 5.766560003444751
+            },
+            {
+              "expectedSeconds": 15.005562481872966,
+              "onsetSeconds": 15.006,
+              "offsetMs": 0.4375181270344086,
+              "energyRiseLogRatio": 5.94872380016295
+            }
+          ]
+        },
+        {
+          "windowMs": 8,
+          "medianMs": 0.5833732799457592,
+          "p5Ms": -0.5135552451590142,
+          "p95Ms": 0.9750154079789296,
+          "minMs": -1.083278616542671,
+          "maxMs": 2.5832896941767904,
+          "stdMs": 0.5877424181467358,
+          "minimumRiseLogRatio": 1.5612517060012012,
+          "points": [
+            {
+              "expectedSeconds": 0.0054167103058232096,
+              "onsetSeconds": 0.008,
+              "offsetMs": 2.5832896941767904,
+              "energyRiseLogRatio": 1.5612517060012012
+            },
+            {
+              "expectedSeconds": 0.4893958108423834,
+              "onsetSeconds": 0.49,
+              "offsetMs": 0.6041891576165637,
+              "energyRiseLogRatio": 4.207377366899465
+            },
+            {
+              "expectedSeconds": 0.9736667062775934,
+              "onsetSeconds": 0.9745,
+              "offsetMs": 0.8332937224065917,
+              "energyRiseLogRatio": 4.325452771939964
+            },
+            {
+              "expectedSeconds": 1.457416701242306,
+              "onsetSeconds": 1.4575,
+              "offsetMs": 0.08329875769397255,
+              "energyRiseLogRatio": 3.9799377533001827
+            },
+            {
+              "expectedSeconds": 1.9414583652234862,
+              "onsetSeconds": 1.942,
+              "offsetMs": 0.5416347765136997,
+              "energyRiseLogRatio": 4.335364024607473
+            },
+            {
+              "expectedSeconds": 2.424958358174084,
+              "onsetSeconds": 2.4255,
+              "offsetMs": 0.5416418259160949,
+              "energyRiseLogRatio": 4.764255773536643
+            },
+            {
+              "expectedSeconds": 2.908979125712997,
+              "onsetSeconds": 2.9095,
+              "offsetMs": 0.5208742870030925,
+              "energyRiseLogRatio": 5.059776744041054
+            },
+            {
+              "expectedSeconds": 3.3929374556894722,
+              "onsetSeconds": 3.3935,
+              "offsetMs": 0.5625443105277128,
+              "energyRiseLogRatio": 5.297544576072215
+            },
+            {
+              "expectedSeconds": 3.876708347096452,
+              "onsetSeconds": 3.876,
+              "offsetMs": -0.7083470964519556,
+              "energyRiseLogRatio": 5.574830507037207
+            },
+            {
+              "expectedSeconds": 4.360708344075279,
+              "onsetSeconds": 4.3615,
+              "offsetMs": 0.7916559247211907,
+              "energyRiseLogRatio": 4.80826646370045
+            },
+            {
+              "expectedSeconds": 4.844437442597725,
+              "onsetSeconds": 4.845,
+              "offsetMs": 0.5625574022749547,
+              "energyRiseLogRatio": 5.039196166408222
+            },
+            {
+              "expectedSeconds": 5.328479106578905,
+              "onsetSeconds": 5.3295,
+              "offsetMs": 1.020893421095792,
+              "energyRiseLogRatio": 5.107600585842182
+            },
+            {
+              "expectedSeconds": 5.811958328969418,
+              "onsetSeconds": 5.8125,
+              "offsetMs": 0.5416710305823358,
+              "energyRiseLogRatio": 5.186881623148374
+            },
+            {
+              "expectedSeconds": 6.2962292244046285,
+              "onsetSeconds": 6.297,
+              "offsetMs": 0.7707755953711981,
+              "energyRiseLogRatio": 5.214005149897574
+            },
+            {
+              "expectedSeconds": 6.779979219369341,
+              "onsetSeconds": 6.78,
+              "offsetMs": 0.020780630658912003,
+              "energyRiseLogRatio": 5.68007534209749
+            },
+            {
+              "expectedSeconds": 7.264062550352873,
+              "onsetSeconds": 7.2645,
+              "offsetMs": 0.43744964712733037,
+              "energyRiseLogRatio": 5.903633480826208
+            },
+            {
+              "expectedSeconds": 7.747749981872966,
+              "onsetSeconds": 7.7485,
+              "offsetMs": 0.7500181270341244,
+              "energyRiseLogRatio": 6.110484289642619
+            },
+            {
+              "expectedSeconds": 8.231499976837677,
+              "onsetSeconds": 8.232,
+              "offsetMs": 0.5000231623224494,
+              "energyRiseLogRatio": 3.697897754355889
+            },
+            {
+              "expectedSeconds": 8.715562537261125,
+              "onsetSeconds": 8.7165,
+              "offsetMs": 0.9374627388751833,
+              "energyRiseLogRatio": 4.04497037704238
+            },
+            {
+              "expectedSeconds": 9.199249968781219,
+              "onsetSeconds": 9.2,
+              "offsetMs": 0.7500312187804781,
+              "energyRiseLogRatio": 3.995848529814437
+            },
+            {
+              "expectedSeconds": 9.683270862202313,
+              "onsetSeconds": 9.684,
+              "offsetMs": 0.7291377976859081,
+              "energyRiseLogRatio": 4.176592441880047
+            },
+            {
+              "expectedSeconds": 10.167020857167026,
+              "onsetSeconds": 10.1675,
+              "offsetMs": 0.4791428329742331,
+              "energyRiseLogRatio": 4.532207684177676
+            },
+            {
+              "expectedSeconds": 10.651062521148207,
+              "onsetSeconds": 10.652,
+              "offsetMs": 0.937478851792406,
+              "energyRiseLogRatio": 4.993642745177398
+            },
+            {
+              "expectedSeconds": 11.134812516112918,
+              "onsetSeconds": 11.1355,
+              "offsetMs": 0.6874838870825073,
+              "energyRiseLogRatio": 5.283015520387046
+            },
+            {
+              "expectedSeconds": 11.6188541800941,
+              "onsetSeconds": 11.6185,
+              "offsetMs": -0.35418009410115303,
+              "energyRiseLogRatio": 5.536132945724412
+            },
+            {
+              "expectedSeconds": 12.102583278616542,
+              "onsetSeconds": 12.1015,
+              "offsetMs": -1.083278616542671,
+              "energyRiseLogRatio": 4.646678644928871
+            },
+            {
+              "expectedSeconds": 12.58627083601882,
+              "onsetSeconds": 12.587,
+              "offsetMs": 0.7291639811803918,
+              "energyRiseLogRatio": 4.898932458145417
+            },
+            {
+              "expectedSeconds": 13.070083394428153,
+              "onsetSeconds": 13.071,
+              "offsetMs": 0.916605571847029,
+              "energyRiseLogRatio": 5.019009123017714
+            },
+            {
+              "expectedSeconds": 13.554333393421095,
+              "onsetSeconds": 13.555,
+              "offsetMs": 0.6666065789051601,
+              "energyRiseLogRatio": 5.160417984082277
+            },
+            {
+              "expectedSeconds": 14.03808338838581,
+              "onsetSeconds": 14.039,
+              "offsetMs": 0.9166116141905434,
+              "energyRiseLogRatio": 5.198644678840788
+            },
+            {
+              "expectedSeconds": 14.521854153910606,
+              "onsetSeconds": 14.522,
+              "offsetMs": 0.14584608939394172,
+              "energyRiseLogRatio": 5.703791520637489
+            },
+            {
+              "expectedSeconds": 15.005562481872966,
+              "onsetSeconds": 15.006,
+              "offsetMs": 0.4375181270344086,
+              "energyRiseLogRatio": 5.909983155009911
+            }
+          ]
+        },
+        {
+          "windowMs": 10,
+          "medianMs": 0.6250045317583164,
+          "p5Ms": -0.37922108133838783,
+          "p95Ms": 0.9843490179169633,
+          "minMs": -2.2708622023142055,
+          "maxMs": 4.58328969417679,
+          "stdMs": 0.9459500731411071,
+          "minimumRiseLogRatio": 1.1161771340110296,
+          "points": [
+            {
+              "expectedSeconds": 0.0054167103058232096,
+              "onsetSeconds": 0.01,
+              "offsetMs": 4.58328969417679,
+              "energyRiseLogRatio": 1.1161771340110296
+            },
+            {
+              "expectedSeconds": 0.4893958108423834,
+              "onsetSeconds": 0.49,
+              "offsetMs": 0.6041891576165637,
+              "energyRiseLogRatio": 4.239670491462876
+            },
+            {
+              "expectedSeconds": 0.9736667062775934,
+              "onsetSeconds": 0.9745,
+              "offsetMs": 0.8332937224065917,
+              "energyRiseLogRatio": 4.37272601994624
+            },
+            {
+              "expectedSeconds": 1.457416701242306,
+              "onsetSeconds": 1.4575,
+              "offsetMs": 0.08329875769397255,
+              "energyRiseLogRatio": 4.2368508947708925
+            },
+            {
+              "expectedSeconds": 1.9414583652234862,
+              "onsetSeconds": 1.9425,
+              "offsetMs": 1.0416347765136447,
+              "energyRiseLogRatio": 4.195279512242433
+            },
+            {
+              "expectedSeconds": 2.424958358174084,
+              "onsetSeconds": 2.4255,
+              "offsetMs": 0.5416418259160949,
+              "energyRiseLogRatio": 4.758506931017851
+            },
+            {
+              "expectedSeconds": 2.908979125712997,
+              "onsetSeconds": 2.9095,
+              "offsetMs": 0.5208742870030925,
+              "energyRiseLogRatio": 5.11979560635752
+            },
+            {
+              "expectedSeconds": 3.3929374556894722,
+              "onsetSeconds": 3.3935,
+              "offsetMs": 0.5625443105277128,
+              "energyRiseLogRatio": 5.399040473413383
+            },
+            {
+              "expectedSeconds": 3.876708347096452,
+              "onsetSeconds": 3.8775,
+              "offsetMs": 0.7916529035481012,
+              "energyRiseLogRatio": 5.599349660492759
+            },
+            {
+              "expectedSeconds": 4.360708344075279,
+              "onsetSeconds": 4.3615,
+              "offsetMs": 0.7916559247211907,
+              "energyRiseLogRatio": 4.91525788848295
+            },
+            {
+              "expectedSeconds": 4.844437442597725,
+              "onsetSeconds": 4.8445,
+              "offsetMs": 0.06255740227523177,
+              "energyRiseLogRatio": 4.919934395314726
+            },
+            {
+              "expectedSeconds": 5.328479106578905,
+              "onsetSeconds": 5.3285,
+              "offsetMs": 0.02089342109545811,
+              "energyRiseLogRatio": 5.094193204152339
+            },
+            {
+              "expectedSeconds": 5.811958328969418,
+              "onsetSeconds": 5.8125,
+              "offsetMs": 0.5416710305823358,
+              "energyRiseLogRatio": 5.250480479885811
+            },
+            {
+              "expectedSeconds": 6.2962292244046285,
+              "onsetSeconds": 6.296,
+              "offsetMs": -0.22922440462824767,
+              "energyRiseLogRatio": 5.25942351067868
+            },
+            {
+              "expectedSeconds": 6.779979219369341,
+              "onsetSeconds": 6.7805,
+              "offsetMs": 0.5207806306586349,
+              "energyRiseLogRatio": 5.57302110910158
+            },
+            {
+              "expectedSeconds": 7.264062550352873,
+              "onsetSeconds": 7.2635,
+              "offsetMs": -0.5625503528730036,
+              "energyRiseLogRatio": 5.866731139684406
+            },
+            {
+              "expectedSeconds": 7.747749981872966,
+              "onsetSeconds": 7.7485,
+              "offsetMs": 0.7500181270341244,
+              "energyRiseLogRatio": 6.2618301307729665
+            },
+            {
+              "expectedSeconds": 8.231499976837677,
+              "onsetSeconds": 8.232,
+              "offsetMs": 0.5000231623224494,
+              "energyRiseLogRatio": 3.7004948000848157
+            },
+            {
+              "expectedSeconds": 8.715562537261125,
+              "onsetSeconds": 8.7165,
+              "offsetMs": 0.9374627388751833,
+              "energyRiseLogRatio": 4.003086459031098
+            },
+            {
+              "expectedSeconds": 9.199249968781219,
+              "onsetSeconds": 9.2,
+              "offsetMs": 0.7500312187804781,
+              "energyRiseLogRatio": 4.19342779293161
+            },
+            {
+              "expectedSeconds": 9.683270862202313,
+              "onsetSeconds": 9.681,
+              "offsetMs": -2.2708622023142055,
+              "energyRiseLogRatio": 3.973357342180329
+            },
+            {
+              "expectedSeconds": 10.167020857167026,
+              "onsetSeconds": 10.1675,
+              "offsetMs": 0.4791428329742331,
+              "energyRiseLogRatio": 4.659178973486905
+            },
+            {
+              "expectedSeconds": 10.651062521148207,
+              "onsetSeconds": 10.652,
+              "offsetMs": 0.937478851792406,
+              "energyRiseLogRatio": 5.038077172084672
+            },
+            {
+              "expectedSeconds": 11.134812516112918,
+              "onsetSeconds": 11.1355,
+              "offsetMs": 0.6874838870825073,
+              "energyRiseLogRatio": 5.257934247927492
+            },
+            {
+              "expectedSeconds": 11.6188541800941,
+              "onsetSeconds": 11.6195,
+              "offsetMs": 0.6458199059000691,
+              "energyRiseLogRatio": 5.491768317526442
+            },
+            {
+              "expectedSeconds": 12.102583278616542,
+              "onsetSeconds": 12.1035,
+              "offsetMs": 0.9167213834579968,
+              "energyRiseLogRatio": 4.806496380096296
+            },
+            {
+              "expectedSeconds": 12.58627083601882,
+              "onsetSeconds": 12.587,
+              "offsetMs": 0.7291639811803918,
+              "energyRiseLogRatio": 4.950458450644775
+            },
+            {
+              "expectedSeconds": 13.070083394428153,
+              "onsetSeconds": 13.071,
+              "offsetMs": 0.916605571847029,
+              "energyRiseLogRatio": 5.1320187725983715
+            },
+            {
+              "expectedSeconds": 13.554333393421095,
+              "onsetSeconds": 13.555,
+              "offsetMs": 0.6666065789051601,
+              "energyRiseLogRatio": 5.214821846981282
+            },
+            {
+              "expectedSeconds": 14.03808338838581,
+              "onsetSeconds": 14.039,
+              "offsetMs": 0.9166116141905434,
+              "energyRiseLogRatio": 5.287642015368405
+            },
+            {
+              "expectedSeconds": 14.521854153910606,
+              "onsetSeconds": 14.522,
+              "offsetMs": 0.14584608939394172,
+              "energyRiseLogRatio": 5.576561359850322
+            },
+            {
+              "expectedSeconds": 15.005562481872966,
+              "onsetSeconds": 15.0055,
+              "offsetMs": -0.062481872966202445,
+              "energyRiseLogRatio": 5.945511981626674
+            }
+          ]
+        }
+      ],
+      "dominantPeakMidiEstimates": [
+        35.54796681248774,
+        36.51538833498716,
+        37.6091629916855,
+        38.63792147999611,
+        43.53493834364103,
+        46.52326891772001,
+        48.60922238849875,
+        50.554488352294904,
+        44.628713000339374,
+        45.54613772559385,
+        46.52326891772001,
+        47.54796681248774,
+        48.60922238849875,
+        51.60896142459892,
+        53.54281892637388,
+        55.597550854893264,
+        35.54796681248774,
+        36.51538833498716,
+        37.6091629916855,
+        38.63792147999611,
+        43.53493834364103,
+        46.52326891772001,
+        48.60922238849875,
+        50.554488352294904,
+        44.628713000339374,
+        45.54613772559385,
+        46.52326891772001,
+        47.54796681248774,
+        48.60922238849875,
+        51.60896142459892,
+        53.54281892637388,
+        55.597550854893264
+      ]
+    }
+  ],
+  "identicalInputPitches": true,
+  "relativePitchCheck": {
+    "observedRoundedSemitoneChanges": [
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1
+    ],
+    "expectedCmajorNearestTieUpChanges": [
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1
+    ],
+    "allMatch": true
+  }
+}

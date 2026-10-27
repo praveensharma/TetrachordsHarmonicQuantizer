@@ -559,7 +559,7 @@
             710,
             36
           ],
-          "text": "Ensemble: assigned pitches persist after Note Off. 4 ms collection; P1–P4 priority. Reset clears pitch memory.",
+          "text": "Ensemble: assigned pitches persist after Note Off. 4 ms collection; P1\u2013P4 priority. Reset clears pitch memory.",
           "linecount": 2
         }
       },
@@ -1752,7 +1752,7 @@
             0.28,
             1.0
           ],
-          "hint": "Choose a unique Part 1–4 within the ensemble.",
+          "hint": "Choose a unique Part 1\u20134 within the ensemble.",
           "hidden": 0
         }
       },
@@ -1860,7 +1860,7 @@
             0.28,
             1.0
           ],
-          "hint": "Preference strength, not probability: avoid other ensemble voices’ last assigned exact MIDI pitches. 0% leaves the mode result unchanged; 100% is strongest, not a guarantee. Octave doubles remain allowed. Ensemble must be enabled.",
+          "hint": "Preference strength, not probability: avoid other ensemble voices\u2019 last assigned exact MIDI pitches. 0% leaves the mode result unchanged; 100% is strongest, not a guarantee. Octave doubles remain allowed. Ensemble must be enabled.",
           "hidden": 0
         }
       },
@@ -1998,7 +1998,7 @@
             720,
             19
           ],
-          "text": "Ensemble Off — independent quantization",
+          "text": "Ensemble Off \u2014 independent quantization",
           "fontsize": 11.0,
           "fontname": "Arial",
           "textcolor": [
@@ -2889,6 +2889,97 @@
           ],
           "text": "page 2"
         }
+      },
+      {
+        "box": {
+          "id": "obj-native",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "int",
+            ""
+          ],
+          "patching_rect": [
+            480,
+            105,
+            180,
+            22
+          ],
+          "text": "tetrachords.quantizer"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-native-active",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            480,
+            140,
+            130,
+            22
+          ],
+          "text": "prepend active"
+        }
+      },
+      {
+        "box": {
+          "id": "native-panic-button",
+          "varname": "native-panic-button",
+          "maxclass": "textbutton",
+          "text": "Panic",
+          "texton": "Panic",
+          "mode": 0,
+          "numinlets": 1,
+          "numoutlets": 3,
+          "patching_rect": [
+            410,
+            7,
+            60,
+            23
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            410,
+            7,
+            60,
+            23
+          ],
+          "rounded": 7,
+          "bgcolor": [
+            0.65,
+            0.15,
+            0.18,
+            1
+          ],
+          "textcolor": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "fontsize": 11
+        }
+      },
+      {
+        "box": {
+          "id": "native-panic-bang",
+          "maxclass": "newobj",
+          "text": "t b",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            410,
+            250,
+            45,
+            22
+          ]
+        }
       }
     ],
     "lines": [
@@ -2971,7 +3062,7 @@
             0
           ],
           "source": [
-            "obj-js",
+            "obj-native",
             0
           ]
         }
@@ -3003,7 +3094,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-js",
+            "obj-native",
             0
           ],
           "source": [
@@ -3791,6 +3882,90 @@
             0
           ]
         }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-js",
+            0
+          ],
+          "destination": [
+            "obj-native",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-native",
+            1
+          ],
+          "destination": [
+            "obj-js",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-thisdevice",
+            1
+          ],
+          "destination": [
+            "obj-native-active",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-native-active",
+            0
+          ],
+          "destination": [
+            "obj-native",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-thisdevice",
+            0
+          ],
+          "destination": [
+            "obj-init",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "native-panic-button",
+            0
+          ],
+          "destination": [
+            "native-panic-bang",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "native-panic-bang",
+            0
+          ],
+          "destination": [
+            "obj-panic",
+            0
+          ]
+        }
       }
     ],
     "dependency_cache": [
@@ -3806,6 +3981,10 @@
         "bootpath": ".",
         "type": "TEXT",
         "implicit": 1
+      },
+      {
+        "name": "tetrachords.quantizer.mxo",
+        "type": "iLaX"
       }
     ],
     "autosave": 0,
